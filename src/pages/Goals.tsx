@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Target, TrendingUp, GraduationCap, Briefcase, Calendar } from 'lucide-react';
+import { Plus, Target, TrendingUp, GraduationCap, Briefcase, Calendar, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,15 +8,19 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { getGoals, addGoal, setGoals, Goal } from '@/lib/storage';
+import { getGoals, addGoal, updateGoal, Goal } from '@/lib/storage';
+import { api } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { getGoalAdvice } from '@/lib/ai-service';
 import { Textarea } from '@/components/ui/textarea';
+import { useTranslation } from 'react-i18next';
 
 const Goals = () => {
   const { toast } = useToast();
-  const [goals, setGoalsState] = useState<Goal[]>(getGoals());
+  const { t } = useTranslation();
+  const [goals, setGoalsState] = useState<Goal[]>([]);
+  const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [selectedGoalAdvice, setSelectedGoalAdvice] = useState<{ id: string; advice: string } | null>(null);
   const [loadingAdvice, setLoadingAdvice] = useState(false);
@@ -29,11 +33,33 @@ const Goals = () => {
     description: ''
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    loadGoals();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const loadGoals = async () => {
+    try {
+      setLoading(true);
+      const data = await getGoals();
+      setGoalsState(data);
+    } catch (error) {
+      console.error('Error loading goals:', error);
+      toast({
+        title: t('goals.errorLoading'),
+        description: t('goals.errorLoadingDesc'),
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     const newGoal: Goal = {
-      id: Date.now().toString(),
+      id: crypto.randomUUID(),
       title: formData.title,
       type: formData.type,
       target: parseFloat(formData.target),
@@ -42,22 +68,47 @@ const Goals = () => {
       description: formData.description
     };
 
-    addGoal(newGoal);
-    setGoalsState(getGoals());
-    setShowForm(false);
-    setFormData({
-      title: '',
-      type: 'financial',
-      target: '',
-      current: '0',
-      deadline: format(new Date(Date.now() + 90 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd'),
-      description: ''
-    });
+    try {
+      await addGoal(newGoal);
+      await loadGoals();
+      setShowForm(false);
+      setFormData({
+        title: '',
+        type: 'financial',
+        target: '',
+        current: '0',
+        deadline: format(new Date(Date.now() + 90 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd'),
+        description: ''
+      });
 
-    toast({
-      title: 'Goal Added',
-      description: `${newGoal.title} has been added to your goals`,
-    });
+      toast({
+        title: t('goals.goalAdded'),
+        description: t('goals.goalAddedDesc', { title: newGoal.title }),
+      });
+    } catch (error) {
+      toast({
+        title: t('goals.errorAdding'),
+        description: t('goals.errorAddingDesc'),
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const updateGoalProgress = async (goalId: string, newCurrent: number) => {
+    try {
+      await updateGoal(goalId, { current: newCurrent });
+      await loadGoals();
+      toast({
+        title: t('goals.progressUpdated'),
+        description: t('goals.progressUpdatedDesc'),
+      });
+    } catch (error) {
+      toast({
+        title: t('goals.errorUpdating'),
+        description: t('goals.errorUpdatingDesc'),
+        variant: 'destructive',
+      });
+    }
   };
 
   const loadGoalAdvice = async (goal: Goal) => {
@@ -67,25 +118,13 @@ const Goals = () => {
       setSelectedGoalAdvice({ id: goal.id, advice });
     } catch (error) {
       toast({
-        title: 'AI Advice Failed',
-        description: 'Could not generate goal achievement advice',
+        title: t('goals.aiAdviceFailed'),
+        description: t('goals.aiAdviceFailedDesc'),
         variant: 'destructive',
       });
     } finally {
       setLoadingAdvice(false);
     }
-  };
-
-  const updateGoalProgress = (goalId: string, newCurrent: number) => {
-    const updated = goals.map(g => 
-      g.id === goalId ? { ...g, current: newCurrent } : g
-    );
-    setGoals(updated);
-    setGoalsState(updated);
-    toast({
-      title: 'Progress Updated',
-      description: 'Goal progress has been updated',
-    });
   };
 
   const getTypeIcon = (type: string) => {
@@ -111,15 +150,15 @@ const Goals = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-4xl font-display font-bold mb-2">Goals Tracker</h1>
-          <p className="text-muted-foreground">Set and achieve your personal and professional goals</p>
+          <h1 className="text-4xl font-display font-bold mb-2">{t('goals.title')}</h1>
+          <p className="text-muted-foreground">{t('goals.subtitle')}</p>
         </div>
         <Button 
           onClick={() => setShowForm(!showForm)}
           className="gradient-accent text-white"
         >
           <Plus className="w-5 h-5 mr-2" />
-          New Goal
+          {t('goals.addGoal')}
         </Button>
       </div>
 
@@ -131,7 +170,7 @@ const Goals = () => {
               <Target className="w-8 h-8 text-white" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Total Goals</p>
+              <p className="text-sm text-muted-foreground">{t('goals.totalGoals')}</p>
               <p className="text-3xl font-display font-bold">{goals.length}</p>
             </div>
           </div>
@@ -143,7 +182,7 @@ const Goals = () => {
               <TrendingUp className="w-8 h-8 text-white" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Average Progress</p>
+              <p className="text-sm text-muted-foreground">{t('goals.progress')}</p>
               <p className="text-3xl font-display font-bold">
                 {goals.length > 0 
                   ? Math.round(goals.reduce((sum, g) => sum + (g.current / g.target * 100), 0) / goals.length)
@@ -159,7 +198,7 @@ const Goals = () => {
               <Calendar className="w-8 h-8 text-white" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Completed</p>
+              <p className="text-sm text-muted-foreground">{t('goals.completedGoals')}</p>
               <p className="text-3xl font-display font-bold">
                 {goals.filter(g => g.current >= g.target).length}
               </p>
@@ -175,39 +214,39 @@ const Goals = () => {
           animate={{ opacity: 1, y: 0 }}
         >
           <Card className="glass-card p-6">
-            <h3 className="text-xl font-display font-semibold mb-4">Create New Goal</h3>
+            <h3 className="text-xl font-display font-semibold mb-4">{t('goals.createGoal')}</h3>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="md:col-span-2">
-                  <Label htmlFor="title">Goal Title</Label>
+                  <Label htmlFor="title">{t('goals.goalTitle')}</Label>
                   <Input
                     id="title"
                     required
                     value={formData.title}
                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                    placeholder="e.g., Save for new laptop"
+                    placeholder={t('goals.goalTitle')}
                   />
                 </div>
 
                 <div>
-                  <Label htmlFor="type">Goal Type</Label>
+                  <Label htmlFor="type">{t('common.type')}</Label>
                   <Select
                     value={formData.type}
-                    onValueChange={(value: any) => setFormData({ ...formData, type: value })}
+                    onValueChange={(value: 'financial' | 'career' | 'education') => setFormData({ ...formData, type: value })}
                   >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="financial">Financial</SelectItem>
-                      <SelectItem value="career">Career</SelectItem>
-                      <SelectItem value="education">Education</SelectItem>
+                      <SelectItem value="financial">{t('goals.financial')}</SelectItem>
+                      <SelectItem value="career">{t('goals.career')}</SelectItem>
+                      <SelectItem value="education">{t('goals.education')}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div>
-                  <Label htmlFor="deadline">Deadline</Label>
+                  <Label htmlFor="deadline">{t('goals.deadline')}</Label>
                   <Input
                     id="deadline"
                     type="date"
@@ -218,7 +257,7 @@ const Goals = () => {
                 </div>
 
                 <div>
-                  <Label htmlFor="target">Target {formData.type === 'financial' ? '(DZD)' : ''}</Label>
+                  <Label htmlFor="target">{t('goals.target')} {formData.type === 'financial' ? '(DZD)' : ''}</Label>
                   <Input
                     id="target"
                     type="number"
@@ -230,7 +269,7 @@ const Goals = () => {
                 </div>
 
                 <div>
-                  <Label htmlFor="current">Current Progress {formData.type === 'financial' ? '(DZD)' : ''}</Label>
+                  <Label htmlFor="current">{t('goals.currentProgress')} {formData.type === 'financial' ? '(DZD)' : ''}</Label>
                   <Input
                     id="current"
                     type="number"
@@ -241,12 +280,12 @@ const Goals = () => {
                 </div>
 
                 <div className="md:col-span-2">
-                  <Label htmlFor="description">Description (Optional)</Label>
+                  <Label htmlFor="description">{t('goals.description')}</Label>
                   <Textarea
                     id="description"
                     value={formData.description}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    placeholder="Why is this goal important to you?"
+                    placeholder={t('goals.whyImportant')}
                     rows={3}
                   />
                 </div>
@@ -254,10 +293,10 @@ const Goals = () => {
 
               <div className="flex gap-3">
                 <Button type="submit" className="gradient-accent text-white">
-                  Create Goal
+                  {t('goals.createGoal')}
                 </Button>
                 <Button type="button" variant="outline" onClick={() => setShowForm(false)}>
-                  Cancel
+                  {t('common.cancel')}
                 </Button>
               </div>
             </form>
@@ -267,11 +306,11 @@ const Goals = () => {
 
       {/* Goals List */}
       <div className="space-y-4">
-        <h3 className="text-xl font-display font-semibold">Your Goals</h3>
+        <h3 className="text-xl font-display font-semibold">{t('goals.yourGoals')}</h3>
         {goals.length === 0 ? (
           <Card className="glass-card p-12 text-center">
             <Target className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-50" />
-            <p className="text-muted-foreground">No goals yet. Set your first goal to get started!</p>
+            <p className="text-muted-foreground">{t('goals.noGoals')}</p>
           </Card>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -300,19 +339,23 @@ const Goals = () => {
                         </div>
                       </div>
                       {isCompleted && (
-                        <Badge className="bg-success text-success-foreground">✓ Achieved</Badge>
+                        <Badge className="bg-success text-success-foreground">✓ {t('goals.achieved')}</Badge>
                       )}
                     </div>
 
                     <div className="space-y-4">
                       <div>
                         <div className="flex justify-between text-sm mb-2">
-                          <span className="text-muted-foreground">Progress</span>
-                          <span className="font-semibold">{progress}%</span>
+                          <span className="text-muted-foreground">{t('goals.progress')}</span>
+                          <span className={`font-semibold ${isCompleted ? 'text-success' : ''}`}>{progress}%</span>
                         </div>
-                        <Progress value={progress} className="h-2" />
+                        <Progress 
+                          value={isCompleted ? 100 : progress} 
+                          className="h-2"
+                          indicatorClassName={isCompleted ? "bg-success" : "bg-primary"}
+                        />
                         <div className="flex justify-between text-sm mt-2">
-                          <span className="text-muted-foreground">
+                          <span className={`${isCompleted ? 'text-success font-semibold' : 'text-muted-foreground'}`}>
                             {goal.type === 'financial' ? `${goal.current.toLocaleString()} DZD` : goal.current}
                           </span>
                           <span className="text-muted-foreground">
@@ -323,7 +366,7 @@ const Goals = () => {
 
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <Calendar className="w-4 h-4" />
-                        <span>Due: {format(new Date(goal.deadline), 'MMM dd, yyyy')}</span>
+                        <span>{t('goals.deadline')}: {format(new Date(goal.deadline), 'MMM dd, yyyy')}</span>
                       </div>
 
                       <div className="flex gap-2">
@@ -332,14 +375,14 @@ const Goals = () => {
                             size="sm" 
                             variant="outline"
                             onClick={() => {
-                              const newCurrent = parseFloat(prompt(`Update progress (current: ${goal.current}, target: ${goal.target})`, goal.current.toString()) || goal.current.toString());
+                              const newCurrent = parseFloat(prompt(`${t('goals.updateProgress')} (${t('goals.currentProgress')}: ${goal.current}, ${t('goals.target')}: ${goal.target})`, goal.current.toString()) || goal.current.toString());
                               if (!isNaN(newCurrent) && newCurrent !== goal.current) {
                                 updateGoalProgress(goal.id, newCurrent);
                               }
                             }}
                             className="border-primary text-primary hover:bg-primary/10"
                           >
-                            Update Progress
+                            {t('goals.updateProgress')}
                           </Button>
                         )}
                         <Button 
@@ -349,7 +392,33 @@ const Goals = () => {
                           disabled={loadingAdvice}
                           className="border-accent text-accent hover:bg-accent/10"
                         >
-                          {loadingAdvice && selectedGoalAdvice?.id === goal.id ? 'Loading...' : 'AI Advice'}
+                          {loadingAdvice && selectedGoalAdvice?.id === goal.id ? t('common.loading') : t('goals.getAdvice')}
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="ghost"
+                          onClick={async () => {
+                            if (confirm(t('goals.confirmDelete', { title: goal.title }))) {
+                              try {
+                                await api.deleteGoal(goal.id);
+                                await loadGoals();
+                                toast({
+                                  title: t('success.deleted'),
+                                  description: t('goals.goalDeleted', { title: goal.title }),
+                                });
+                              } catch (error) {
+                                console.error('Error deleting goal:', error);
+                                toast({
+                                  title: t('errors.errorDeleting'),
+                                  description: t('errors.couldNotDelete'),
+                                  variant: 'destructive',
+                                });
+                              }
+                            }
+                          }}
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10 ml-auto"
+                        >
+                          <Trash2 className="w-4 h-4" />
                         </Button>
                       </div>
 

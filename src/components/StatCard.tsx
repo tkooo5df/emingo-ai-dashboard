@@ -23,14 +23,14 @@ const StatCard = ({ icon: Icon, label, value, trend, gradient = 'primary', child
   return (
     <motion.div
       whileHover={{ scale: 1.02, y: -4 }}
-      className="glass-card rounded-2xl p-6 transition-all duration-300 hover:shadow-xl hover:shadow-primary/10"
+      className="glass-card rounded-xl md:rounded-2xl p-4 md:p-6 transition-all duration-300 hover:shadow-xl hover:shadow-primary/10 active:scale-95 touch-manipulation"
     >
-      <div className="flex items-start justify-between mb-4">
-        <div className={`p-3 rounded-xl ${gradientClass}`}>
-          <Icon className="w-6 h-6 text-white" />
+      <div className="flex items-start justify-between mb-3 md:mb-4">
+        <div className={`p-2 md:p-3 rounded-lg md:rounded-xl ${gradientClass}`}>
+          <Icon className="w-5 h-5 md:w-6 md:h-6 text-white" />
         </div>
         {trend && (
-          <div className={`px-3 py-1 rounded-full text-xs font-semibold ${
+          <div className={`px-2 md:px-3 py-1 rounded-full text-[10px] md:text-xs font-semibold ${
             trend.isPositive ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'
           }`}>
             {trend.isPositive ? '+' : ''}{trend.value}%
@@ -39,12 +39,12 @@ const StatCard = ({ icon: Icon, label, value, trend, gradient = 'primary', child
       </div>
       
       <div>
-        <p className="text-sm text-muted-foreground mb-1">{label}</p>
-        <p className="text-3xl font-display font-bold text-foreground">{value}</p>
+        <p className="text-xs md:text-sm text-muted-foreground mb-1">{label}</p>
+        <p className="text-xl md:text-3xl font-display font-bold text-foreground break-words">{value}</p>
       </div>
       
       {children && (
-        <div className="mt-4 pt-4 border-t border-border/50">
+        <div className="mt-3 md:mt-4 pt-3 md:pt-4 border-t border-border/50">
           {children}
         </div>
       )}

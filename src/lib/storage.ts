@@ -1,4 +1,5 @@
-// LocalStorage utilities for EMINGO
+// Database storage utilities for EMINGO
+import { api } from './api';
 
 export interface IncomeEntry {
   id: string;
@@ -7,6 +8,8 @@ export interface IncomeEntry {
   category: string;
   date: string;
   description?: string;
+  account_id?: string;
+  account_type?: 'ccp' | 'cash' | 'creditcard';
 }
 
 export interface ExpenseEntry {
@@ -15,6 +18,8 @@ export interface ExpenseEntry {
   category: string;
   date: string;
   description?: string;
+  account_id?: string;
+  account_type?: 'ccp' | 'cash' | 'creditcard';
 }
 
 export interface Project {
@@ -47,96 +52,213 @@ export interface BudgetPlan {
 }
 
 const STORAGE_KEYS = {
-  INCOME: 'emingo_income',
-  EXPENSES: 'emingo_expenses',
-  PROJECTS: 'emingo_projects',
-  GOALS: 'emingo_goals',
-  BUDGET: 'emingo_budget',
   THEME: 'emingo_theme',
 };
 
-// Generic storage functions
-export const getStorageItem = <T>(key: string, defaultValue: T): T => {
+// Theme operations (stays in localStorage)
+export const getTheme = (): 'light' | 'dark' => {
   try {
-    const item = localStorage.getItem(key);
-    return item ? JSON.parse(item) : defaultValue;
+    const item = localStorage.getItem(STORAGE_KEYS.THEME);
+    return item ? JSON.parse(item) : 'dark';
   } catch (error) {
-    console.error(`Error reading ${key} from storage:`, error);
-    return defaultValue;
+    return 'dark';
   }
 };
 
-export const setStorageItem = <T>(key: string, value: T): void => {
+export const setTheme = (theme: 'light' | 'dark') => {
   try {
-    localStorage.setItem(key, JSON.stringify(value));
+    localStorage.setItem(STORAGE_KEYS.THEME, JSON.stringify(theme));
   } catch (error) {
-    console.error(`Error writing ${key} to storage:`, error);
+    console.error('Error saving theme:', error);
   }
 };
 
 // Income operations
-export const getIncome = (): IncomeEntry[] => getStorageItem(STORAGE_KEYS.INCOME, []);
-export const setIncome = (income: IncomeEntry[]) => setStorageItem(STORAGE_KEYS.INCOME, income);
-export const addIncome = (entry: IncomeEntry) => {
-  const income = getIncome();
-  setIncome([entry, ...income]);
+export const getIncome = async (): Promise<IncomeEntry[]> => {
+  try {
+    return await api.getIncome();
+  } catch (error) {
+    console.error('Error fetching income:', error);
+    return [];
+  }
+};
+
+export const addIncome = async (entry: IncomeEntry): Promise<void> => {
+  try {
+    console.log('💾 [STORAGE] addIncome() called');
+    console.log('💾 [STORAGE] Income entry:', {
+      id: entry.id,
+      amount: entry.amount,
+      source: entry.source,
+      category: entry.category,
+      date: entry.date,
+      description: entry.description,
+      account_id: entry.account_id,
+      account_type: entry.account_type
+    });
+    const result = await api.addIncome(entry);
+    console.log('✅ [STORAGE] Income added successfully:', result);
+  } catch (error) {
+    console.error('❌ [STORAGE] Error adding income:', error);
+    console.error('❌ [STORAGE] Error details:', {
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      entry
+    });
+    throw error;
+  }
 };
 
 // Expense operations
-export const getExpenses = (): ExpenseEntry[] => getStorageItem(STORAGE_KEYS.EXPENSES, []);
-export const setExpenses = (expenses: ExpenseEntry[]) => setStorageItem(STORAGE_KEYS.EXPENSES, expenses);
-export const addExpense = (entry: ExpenseEntry) => {
-  const expenses = getExpenses();
-  setExpenses([entry, ...expenses]);
+export const getExpenses = async (): Promise<ExpenseEntry[]> => {
+  try {
+    return await api.getExpenses();
+  } catch (error) {
+    console.error('Error fetching expenses:', error);
+    return [];
+  }
+};
+
+export const addExpense = async (entry: ExpenseEntry): Promise<void> => {
+  try {
+    console.log('💾 [STORAGE] addExpense() called');
+    console.log('💾 [STORAGE] Expense entry:', {
+      id: entry.id,
+      amount: entry.amount,
+      category: entry.category,
+      date: entry.date,
+      description: entry.description,
+      account_id: entry.account_id,
+      account_type: entry.account_type
+    });
+    const result = await api.addExpense(entry);
+    console.log('✅ [STORAGE] Expense added successfully:', result);
+  } catch (error) {
+    console.error('❌ [STORAGE] Error adding expense:', error);
+    console.error('❌ [STORAGE] Error details:', {
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      entry
+    });
+    throw error;
+  }
 };
 
 // Project operations
-export const getProjects = (): Project[] => getStorageItem(STORAGE_KEYS.PROJECTS, []);
-export const setProjects = (projects: Project[]) => setStorageItem(STORAGE_KEYS.PROJECTS, projects);
-export const addProject = (project: Project) => {
-  const projects = getProjects();
-  setProjects([project, ...projects]);
+export const getProjects = async (): Promise<Project[]> => {
+  try {
+    return await api.getProjects();
+  } catch (error) {
+    console.error('Error fetching projects:', error);
+    return [];
+  }
+};
+
+export const addProject = async (project: Project): Promise<void> => {
+  try {
+    await api.addProject(project);
+  } catch (error) {
+    console.error('Error adding project:', error);
+    throw error;
+  }
+};
+
+export const updateProject = async (projectId: string, updates: Partial<Project>): Promise<void> => {
+  try {
+    await api.updateProject(projectId, updates);
+  } catch (error) {
+    console.error('Error updating project:', error);
+    throw error;
+  }
 };
 
 // Goal operations
-export const getGoals = (): Goal[] => getStorageItem(STORAGE_KEYS.GOALS, []);
-export const setGoals = (goals: Goal[]) => setStorageItem(STORAGE_KEYS.GOALS, goals);
-export const addGoal = (goal: Goal) => {
-  const goals = getGoals();
-  setGoals([goal, ...goals]);
+export const getGoals = async (): Promise<Goal[]> => {
+  try {
+    return await api.getGoals();
+  } catch (error) {
+    console.error('Error fetching goals:', error);
+    return [];
+  }
+};
+
+export const addGoal = async (goal: Goal): Promise<void> => {
+  try {
+    await api.addGoal(goal);
+  } catch (error) {
+    console.error('Error adding goal:', error);
+    throw error;
+  }
+};
+
+export const updateGoal = async (goalId: string, updates: Partial<Goal>): Promise<void> => {
+  try {
+    await api.updateGoal(goalId, updates);
+  } catch (error) {
+    console.error('Error updating goal:', error);
+    throw error;
+  }
 };
 
 // Budget operations
-export const getBudget = (): BudgetPlan | null => getStorageItem(STORAGE_KEYS.BUDGET, null);
-export const setBudget = (budget: BudgetPlan) => setStorageItem(STORAGE_KEYS.BUDGET, budget);
+export const getBudget = async (): Promise<BudgetPlan | null> => {
+  try {
+    return await api.getBudget();
+  } catch (error) {
+    console.error('Error fetching budget:', error);
+    return null;
+  }
+};
 
-// Theme operations
-export const getTheme = (): 'light' | 'dark' => getStorageItem(STORAGE_KEYS.THEME, 'dark');
-export const setTheme = (theme: 'light' | 'dark') => setStorageItem(STORAGE_KEYS.THEME, theme);
+export const setBudget = async (budget: BudgetPlan): Promise<void> => {
+  try {
+    await api.setBudget(budget);
+  } catch (error) {
+    console.error('Error saving budget:', error);
+    throw error;
+  }
+};
 
 // Calculate totals
-export const calculateMonthlyIncome = (): number => {
-  const income = getIncome();
-  const currentMonth = new Date().getMonth();
-  const currentYear = new Date().getFullYear();
-  
-  return income
-    .filter(entry => {
-      const entryDate = new Date(entry.date);
-      return entryDate.getMonth() === currentMonth && entryDate.getFullYear() === currentYear;
-    })
-    .reduce((sum, entry) => sum + entry.amount, 0);
+export const calculateMonthlyIncome = async (): Promise<number> => {
+  try {
+    return await api.calculateMonthlyIncome();
+  } catch (error) {
+    console.error('Error calculating monthly income:', error);
+    return 0;
+  }
 };
 
-export const calculateMonthlyExpenses = (): number => {
-  const expenses = getExpenses();
-  const currentMonth = new Date().getMonth();
-  const currentYear = new Date().getFullYear();
-  
-  return expenses
-    .filter(entry => {
-      const entryDate = new Date(entry.date);
-      return entryDate.getMonth() === currentMonth && entryDate.getFullYear() === currentYear;
-    })
-    .reduce((sum, entry) => sum + entry.amount, 0);
+export const calculateMonthlyExpenses = async (): Promise<number> => {
+  try {
+    return await api.calculateMonthlyExpenses();
+  } catch (error) {
+    console.error('Error calculating monthly expenses:', error);
+    return 0;
+  }
 };
+
+// Sync versions for backward compatibility (deprecated - use async versions)
+let incomeCache: IncomeEntry[] = [];
+let expensesCache: ExpenseEntry[] = [];
+
+export const getIncomeSync = (): IncomeEntry[] => incomeCache;
+export const getExpensesSync = (): ExpenseEntry[] => expensesCache;
+
+// Function to update cache
+export const refreshCache = async () => {
+  incomeCache = await getIncome();
+  expensesCache = await getExpenses();
+};
+
+// Update cache on load (only if user is authenticated)
+if (typeof window !== 'undefined') {
+  // Check if user is authenticated before refreshing cache
+  const token = localStorage.getItem('auth_token');
+  if (token) {
+    refreshCache().catch(err => {
+      // Silently fail if user is not authenticated or cache refresh fails
+      console.debug('Cache refresh skipped:', err.message);
+    });
+  }
+}

@@ -6,7 +6,8 @@ import {
   DollarSign, 
   Sparkles,
   ArrowUpRight,
-  ArrowDownRight
+  ArrowDownRight,
+  PiggyBank
 } from 'lucide-react';
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import StatCard from '@/components/StatCard';
@@ -18,43 +19,126 @@ import {
   getProjects,
   getGoals
 } from '@/lib/storage';
+import { api } from '@/lib/api';
 import { getDailyTip } from '@/lib/ai-service';
 import { useToast } from '@/hooks/use-toast';
+import { useTranslation } from 'react-i18next';
+
+interface Settings {
+  currency: string;
+}
+
+interface Profile {
+  name: string | null;
+  age: number | null;
+  current_work: string | null;
+  description: string | null;
+}
 
 const Dashboard = () => {
   const { toast } = useToast();
+  const { t, i18n } = useTranslation();
   const [monthlyIncome, setMonthlyIncome] = useState(0);
   const [monthlyExpenses, setMonthlyExpenses] = useState(0);
   const [dailyTip, setDailyTip] = useState<string>('');
   const [loadingTip, setLoadingTip] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [income, setIncome] = useState<Array<{ amount: number; date: string; category?: string }>>([]);
+  const [expenses, setExpenses] = useState<Array<{ amount: number; date: string; category?: string }>>([]);
+  const [projects, setProjects] = useState<Array<{ status: string }>>([]);
+  const [goals, setGoals] = useState<Array<{ current: number; target: number }>>([]);
+  const [accountBalance, setAccountBalance] = useState(0);
+  const [currency, setCurrency] = useState('DZD');
+  const [userName, setUserName] = useState('User');
 
   useEffect(() => {
-    setMonthlyIncome(calculateMonthlyIncome());
-    setMonthlyExpenses(calculateMonthlyExpenses());
-    loadDailyTip();
+    loadData();
+    loadSettings();
+    loadProfile();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const loadSettings = async () => {
+    try {
+      const settings = await api.getSettings();
+      setCurrency(settings.currency || 'DZD');
+    } catch (error) {
+      console.error('Error loading settings:', error);
+      // Use default currency if settings fail to load
+      setCurrency('DZD');
+    }
+  };
+
+  const loadProfile = async () => {
+    try {
+      const profile = await api.getProfile();
+      if (profile.name) {
+        setUserName(profile.name);
+      }
+    } catch (error) {
+      console.error('Error loading profile:', error);
+    }
+  };
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const [incomeData, expensesData, projectsData, goalsData, incomeTotal, expensesTotal, balance] = await Promise.all([
+        getIncome(),
+        getExpenses(),
+        getProjects(),
+        getGoals(),
+        calculateMonthlyIncome(),
+        calculateMonthlyExpenses(),
+        api.getAccountBalance().catch(() => 0), // Fallback to 0 if error
+      ]);
+      
+      setIncome(incomeData);
+      setExpenses(expensesData);
+      setProjects(projectsData);
+      setGoals(goalsData);
+      setMonthlyIncome(incomeTotal);
+      setMonthlyExpenses(expensesTotal);
+      setAccountBalance(balance);
+      loadDailyTip();
+    } catch (error) {
+      console.error('Error loading data:', error);
+      toast({
+        title: 'Error Loading Data',
+        description: 'Could not load financial data.',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const loadDailyTip = async () => {
     try {
+      setLoadingTip(true);
       const tip = await getDailyTip();
       setDailyTip(tip);
     } catch (error) {
       console.error('Failed to load daily tip:', error);
-      toast({
-        title: 'AI Tip Unavailable',
-        description: 'Could not fetch daily financial tip.',
-        variant: 'destructive',
-      });
+      // Don't show error toast for daily tip, just use fallback
+      setDailyTip('Track your expenses daily to understand your spending patterns better.');
     } finally {
       setLoadingTip(false);
     }
   };
 
-  const netBalance = monthlyIncome - monthlyExpenses;
-  const savingsRate = monthlyIncome > 0 ? ((netBalance / monthlyIncome) * 100).toFixed(1) : 0;
+  // Calculate Net Balance (Monthly Income - Monthly Expenses)
+  // Ensure values are numbers
+  const incomeNum = typeof monthlyIncome === 'number' ? monthlyIncome : Number(monthlyIncome) || 0;
+  const expensesNum = typeof monthlyExpenses === 'number' ? monthlyExpenses : Number(monthlyExpenses) || 0;
+  const netBalance = incomeNum - expensesNum;
+  
+  // Calculate Savings Rate (only if income > 0)
+  const savingsRate = incomeNum > 0 
+    ? Math.max(0, Math.min(100, Number(((netBalance / incomeNum) * 100).toFixed(1))))
+    : 0;
 
   // Chart data
-  const expenses = getExpenses();
   const expensesByCategory = expenses.reduce((acc, exp) => {
     acc[exp.category] = (acc[exp.category] || 0) + exp.amount;
     return acc;
@@ -68,80 +152,95 @@ const Dashboard = () => {
   const COLORS = ['hsl(var(--primary))', 'hsl(var(--secondary))', 'hsl(var(--accent))', 'hsl(var(--success))', 'hsl(var(--warning))'];
 
   // Recent transactions for line chart
-  const income = getIncome().slice(0, 7).reverse();
-  const incomeChartData = income.map(i => ({
+  const incomeChartData = income.slice(0, 7).reverse().map(i => ({
     date: new Date(i.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
     amount: i.amount
   }));
 
-  const projects = getProjects();
   const activeProjects = projects.filter(p => p.status === 'ongoing').length;
   
-  const goals = getGoals();
   const goalsProgress = goals.length > 0 
     ? (goals.reduce((sum, g) => sum + (g.current / g.target), 0) / goals.length * 100).toFixed(0)
     : 0;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
       >
-        <h1 className="text-4xl font-display font-bold mb-2">
-          Welcome back, <span className="gradient-primary bg-clip-text text-transparent">Amine</span>
+        <h1 className="text-2xl md:text-4xl font-display font-bold mb-1 md:mb-2">
+          {t('dashboard.welcome', { name: userName })}
         </h1>
-        <p className="text-muted-foreground">Here's your financial overview for {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</p>
+        <p className="text-sm md:text-base text-muted-foreground">{t('dashboard.overview')} {new Date().toLocaleDateString(i18n.language === 'ar' ? 'ar-SA' : i18n.language === 'fr' ? 'fr-FR' : 'en-US', { month: 'long', year: 'numeric' })}</p>
       </motion.div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-6">
         <StatCard
           icon={Wallet}
-          label="Monthly Income"
-          value={`${monthlyIncome.toLocaleString()} DZD`}
-          trend={{ value: 12, isPositive: true }}
+          label={t('dashboard.monthlyIncome')}
+          value={`${incomeNum.toLocaleString()} ${currency}`}
           gradient="success"
         />
         
         <StatCard
           icon={TrendingDown}
-          label="Monthly Expenses"
-          value={`${monthlyExpenses.toLocaleString()} DZD`}
-          trend={{ value: 5, isPositive: false }}
+          label={t('dashboard.monthlyExpenses')}
+          value={`${expensesNum.toLocaleString()} ${currency}`}
           gradient="warning"
         />
         
         <StatCard
           icon={DollarSign}
-          label="Net Balance"
-          value={`${netBalance.toLocaleString()} DZD`}
+          label={t('dashboard.netBalance')}
+          value={`${netBalance.toLocaleString()} ${currency}`}
           gradient={netBalance >= 0 ? 'primary' : 'warning'}
         >
           <div className="flex items-center gap-2 text-sm">
             {netBalance >= 0 ? (
               <>
                 <ArrowUpRight className="w-4 h-4 text-success" />
-                <span className="text-success">Savings rate: {savingsRate}%</span>
+                <span className="text-success">
+                  {incomeNum > 0 ? `${t('dashboard.savings')}: ${savingsRate}%` : t('common.positive')}
+                </span>
               </>
             ) : (
               <>
                 <ArrowDownRight className="w-4 h-4 text-destructive" />
-                <span className="text-destructive">Budget deficit</span>
+                <span className="text-destructive">{t('common.deficit')}</span>
               </>
             )}
           </div>
         </StatCard>
         
         <StatCard
+          icon={PiggyBank}
+          label={t('dashboard.accountBalance')}
+          value={`${accountBalance.toLocaleString()} ${currency}`}
+          gradient={accountBalance >= 0 ? 'primary' : 'warning'}
+        >
+          <div className="flex items-center gap-2 text-sm">
+            {accountBalance >= 0 ? (
+              <ArrowUpRight className="w-4 h-4 text-success" />
+            ) : (
+              <ArrowDownRight className="w-4 h-4 text-destructive" />
+            )}
+            <span className={accountBalance >= 0 ? 'text-success' : 'text-destructive'}>
+              {accountBalance >= 0 ? t('common.positive') : t('common.negative')}
+            </span>
+          </div>
+        </StatCard>
+        
+        <StatCard
           icon={Sparkles}
-          label="Active Projects"
+          label={t('dashboard.activeProjects')}
           value={activeProjects}
           gradient="accent"
         >
           <div className="text-sm text-muted-foreground">
-            Goals Progress: {goalsProgress}%
+            {t('dashboard.goalsProgress')}: {goalsProgress}%
           </div>
         </StatCard>
       </div>
@@ -151,39 +250,39 @@ const Dashboard = () => {
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ delay: 0.2 }}
-        className="glass-card rounded-2xl p-6 gradient-primary relative overflow-hidden"
+        className="glass-card rounded-xl md:rounded-2xl p-4 md:p-6 gradient-primary relative overflow-hidden"
       >
-        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+        <div className="absolute top-0 right-0 w-48 md:w-64 h-48 md:h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
         <div className="relative z-10">
-          <div className="flex items-center gap-3 mb-4">
+          <div className="flex items-center gap-2 md:gap-3 mb-3 md:mb-4">
             <div className="p-2 rounded-lg bg-white/20 backdrop-blur-sm">
-              <Sparkles className="w-5 h-5 text-white" />
+              <Sparkles className="w-4 h-4 md:w-5 md:h-5 text-white" />
             </div>
-            <h2 className="text-xl font-display font-semibold text-white">Daily AI Financial Tip</h2>
+            <h2 className="text-base md:text-xl font-display font-semibold text-white">{t('dashboard.dailyTip')}</h2>
           </div>
           {loadingTip ? (
-            <div className="flex items-center gap-2 text-white/80">
+            <div className="flex items-center gap-2 text-white/80 text-sm md:text-base">
               <div className="animate-spin rounded-full h-4 w-4 border-2 border-white/30 border-t-white" />
-              <span>Loading AI insights...</span>
+              <span>{t('dashboard.loadingInsights')}</span>
             </div>
           ) : (
-            <p className="text-white/90 leading-relaxed">{dailyTip}</p>
+            <p className="text-white/90 leading-relaxed text-sm md:text-base">{dailyTip}</p>
           )}
         </div>
       </motion.div>
 
       {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
         {/* Income Trend */}
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.3 }}
-          className="glass-card rounded-2xl p-6"
+          className="glass-card rounded-xl md:rounded-2xl p-4 md:p-6"
         >
-          <h3 className="text-xl font-display font-semibold mb-4">Income Trend</h3>
+          <h3 className="text-lg md:text-xl font-display font-semibold mb-3 md:mb-4">{t('dashboard.incomeTrend')}</h3>
           {incomeChartData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={250}>
+            <ResponsiveContainer width="100%" height={200}>
               <LineChart data={incomeChartData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                 <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" />
@@ -205,8 +304,8 @@ const Dashboard = () => {
               </LineChart>
             </ResponsiveContainer>
           ) : (
-            <div className="h-[250px] flex items-center justify-center text-muted-foreground">
-              <p>No income data yet. Add your first income entry!</p>
+            <div className="h-[200px] flex items-center justify-center text-muted-foreground text-sm px-4">
+              <p className="text-center">{t('dashboard.noIncomeData')}</p>
             </div>
           )}
         </motion.div>
@@ -216,11 +315,11 @@ const Dashboard = () => {
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.4 }}
-          className="glass-card rounded-2xl p-6"
+          className="glass-card rounded-xl md:rounded-2xl p-4 md:p-6"
         >
-          <h3 className="text-xl font-display font-semibold mb-4">Expense Distribution</h3>
+          <h3 className="text-lg md:text-xl font-display font-semibold mb-3 md:mb-4">{t('dashboard.expenseDistribution')}</h3>
           {expensePieData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={250}>
+            <ResponsiveContainer width="100%" height={200}>
               <PieChart>
                 <Pie
                   data={expensePieData}
@@ -228,7 +327,7 @@ const Dashboard = () => {
                   cy="50%"
                   labelLine={false}
                   label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                  outerRadius={80}
+                  outerRadius={60}
                   fill="hsl(var(--primary))"
                   dataKey="value"
                 >
@@ -240,14 +339,15 @@ const Dashboard = () => {
                   contentStyle={{ 
                     backgroundColor: 'hsl(var(--card))', 
                     border: '1px solid hsl(var(--border))',
-                    borderRadius: '12px'
+                    borderRadius: '12px',
+                    fontSize: '12px'
                   }} 
                 />
               </PieChart>
             </ResponsiveContainer>
           ) : (
-            <div className="h-[250px] flex items-center justify-center text-muted-foreground">
-              <p>No expense data yet. Track your spending to see insights!</p>
+            <div className="h-[200px] flex items-center justify-center text-muted-foreground text-sm px-4">
+              <p className="text-center">{t('dashboard.noExpenseData')}</p>
             </div>
           )}
         </motion.div>
@@ -258,21 +358,21 @@ const Dashboard = () => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.5 }}
-        className="grid grid-cols-1 md:grid-cols-3 gap-4"
+        className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4"
       >
-        <button className="glass-card rounded-xl p-4 text-left hover:bg-primary/10 transition-colors border border-primary/20">
-          <h4 className="font-display font-semibold text-primary mb-1">Add Income</h4>
-          <p className="text-sm text-muted-foreground">Record a new income entry</p>
+        <button className="glass-card rounded-xl p-4 md:p-4 text-left active:scale-95 transition-transform touch-manipulation border border-primary/20 min-h-[80px]">
+          <h4 className="font-display font-semibold text-primary mb-1 text-sm md:text-base">{t('dashboard.addIncome')}</h4>
+          <p className="text-xs md:text-sm text-muted-foreground">{t('dashboard.addIncomeDesc')}</p>
         </button>
         
-        <button className="glass-card rounded-xl p-4 text-left hover:bg-warning/10 transition-colors border border-warning/20">
-          <h4 className="font-display font-semibold text-warning mb-1">Track Expense</h4>
-          <p className="text-sm text-muted-foreground">Log a new expense</p>
+        <button className="glass-card rounded-xl p-4 md:p-4 text-left active:scale-95 transition-transform touch-manipulation border border-warning/20 min-h-[80px]">
+          <h4 className="font-display font-semibold text-warning mb-1 text-sm md:text-base">{t('dashboard.trackExpense')}</h4>
+          <p className="text-xs md:text-sm text-muted-foreground">{t('dashboard.trackExpenseDesc')}</p>
         </button>
         
-        <button className="glass-card rounded-xl p-4 text-left hover:bg-accent/10 transition-colors border border-accent/20">
-          <h4 className="font-display font-semibold text-accent mb-1">Ask AI</h4>
-          <p className="text-sm text-muted-foreground">Get financial advice</p>
+        <button className="glass-card rounded-xl p-4 md:p-4 text-left active:scale-95 transition-transform touch-manipulation border border-accent/20 min-h-[80px]">
+          <h4 className="font-display font-semibold text-accent mb-1 text-sm md:text-base">{t('dashboard.askAI')}</h4>
+          <p className="text-xs md:text-sm text-muted-foreground">{t('dashboard.askAIDesc')}</p>
         </button>
       </motion.div>
     </div>

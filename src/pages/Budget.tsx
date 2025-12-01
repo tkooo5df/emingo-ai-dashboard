@@ -7,9 +7,11 @@ import { PieChart as RechartsPie, Pie, Cell, ResponsiveContainer, Legend, Toolti
 import { getBudget, setBudget, BudgetPlan, calculateMonthlyIncome } from '@/lib/storage';
 import { generateBudgetPlan } from '@/lib/ai-service';
 import { useToast } from '@/hooks/use-toast';
+import { useTranslation } from 'react-i18next';
 
 const Budget = () => {
   const { toast } = useToast();
+  const { t, i18n } = useTranslation();
   const [budget, setBudgetState] = useState<BudgetPlan | null>(getBudget());
   const [loading, setLoading] = useState(false);
   const monthlyIncome = calculateMonthlyIncome();
@@ -29,13 +31,13 @@ const Budget = () => {
       setBudget(budgetPlan);
       setBudgetState(budgetPlan);
       toast({
-        title: 'Budget Plan Generated',
-        description: 'AI has created your personalized budget plan',
+        title: t('budget.planGenerated'),
+        description: t('budget.planDescription'),
       });
     } catch (error) {
       toast({
-        title: 'Generation Failed',
-        description: 'Could not generate budget plan',
+        title: t('budget.generationFailed'),
+        description: t('budget.couldNotGenerate'),
         variant: 'destructive',
       });
     } finally {
@@ -44,10 +46,10 @@ const Budget = () => {
   };
 
   const budgetData = budget ? [
-    { name: 'Savings', value: budget.savings, color: 'hsl(var(--success))' },
-    { name: 'Necessities', value: budget.necessities, color: 'hsl(var(--primary))' },
-    { name: 'Wants', value: budget.wants, color: 'hsl(var(--secondary))' },
-    { name: 'Investments', value: budget.investments, color: 'hsl(var(--accent))' }
+    { name: t('budget.savings'), value: budget.savings, color: 'hsl(var(--success))' },
+    { name: t('budget.necessities'), value: budget.necessities, color: 'hsl(var(--primary))' },
+    { name: t('budget.wants'), value: budget.wants, color: 'hsl(var(--secondary))' },
+    { name: t('budget.investments'), value: budget.investments, color: 'hsl(var(--accent))' }
   ] : [];
 
   const budgetAmounts = budget && monthlyIncome > 0 ? {
@@ -62,8 +64,8 @@ const Budget = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-4xl font-display font-bold mb-2">AI Budget Planner</h1>
-          <p className="text-muted-foreground">Optimize your spending with AI recommendations</p>
+          <h1 className="text-4xl font-display font-bold mb-2">{t('budget.title')}</h1>
+          <p className="text-muted-foreground">{t('budget.subtitle')}</p>
         </div>
         <Button 
           onClick={generatePlan}
@@ -73,12 +75,12 @@ const Budget = () => {
           {loading ? (
             <>
               <RefreshCw className="w-5 h-5 mr-2 animate-spin" />
-              Generating...
+              {t('budget.generating')}
             </>
           ) : (
             <>
               <Sparkles className="w-5 h-5 mr-2" />
-              {budget ? 'Regenerate Plan' : 'Generate Plan'}
+              {budget ? t('budget.regeneratePlan') : t('budget.generatePlan')}
             </>
           )}
         </Button>
@@ -88,13 +90,13 @@ const Budget = () => {
         <Card className="glass-card p-12 text-center">
           <div className="max-w-md mx-auto">
             <PieChart className="w-16 h-16 mx-auto mb-4 text-primary" />
-            <h3 className="text-2xl font-display font-semibold mb-2">No Budget Plan Yet</h3>
+            <h3 className="text-2xl font-display font-semibold mb-2">{t('budget.noBudgetYet')}</h3>
             <p className="text-muted-foreground mb-6">
-              Let AI analyze your income and expenses to create a personalized budget plan optimized for your lifestyle as a student and freelancer.
+              {t('budget.noBudgetDesc')}
             </p>
             <Button onClick={generatePlan} disabled={loading} className="gradient-primary text-white">
               <Sparkles className="w-5 h-5 mr-2" />
-              Generate Budget Plan
+              {t('budget.generatePlan')}
             </Button>
           </div>
         </Card>
@@ -106,11 +108,11 @@ const Budget = () => {
             <div className="relative z-10">
               <div className="flex items-center gap-3 mb-4">
                 <Sparkles className="w-6 h-6 text-white" />
-                <h3 className="text-xl font-display font-semibold text-white">AI Budget Recommendation</h3>
+                <h3 className="text-xl font-display font-semibold text-white">{t('budget.aiRecommendation')}</h3>
               </div>
               <p className="text-white/90 leading-relaxed">{budget.aiRecommendation}</p>
               <p className="text-white/60 text-sm mt-4">
-                Generated on {new Date(budget.generatedAt).toLocaleDateString('en-US', { 
+                {t('budget.generatedOn')} {new Date(budget.generatedAt).toLocaleDateString(i18n.language === 'ar' ? 'ar-SA' : i18n.language === 'fr' ? 'fr-FR' : 'en-US', { 
                   month: 'long', 
                   day: 'numeric', 
                   year: 'numeric' 
@@ -123,7 +125,7 @@ const Budget = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Chart */}
             <Card className="glass-card p-6">
-              <h3 className="text-xl font-display font-semibold mb-4">Budget Allocation</h3>
+              <h3 className="text-xl font-display font-semibold mb-4">{t('budget.budgetAllocation')}</h3>
               <ResponsiveContainer width="100%" height={300}>
                 <RechartsPie>
                   <Pie
@@ -152,12 +154,12 @@ const Budget = () => {
 
             {/* Breakdown Cards */}
             <div className="space-y-4">
-              <h3 className="text-xl font-display font-semibold">Monthly Allocation</h3>
+              <h3 className="text-xl font-display font-semibold">{t('budget.monthlyAllocation')}</h3>
               
               <Card className="glass-card p-4 border-l-4 border-success">
                 <div className="flex justify-between items-center">
                   <div>
-                    <p className="text-sm text-muted-foreground">Savings</p>
+                    <p className="text-sm text-muted-foreground">{t('budget.savings')}</p>
                     <p className="text-2xl font-display font-bold text-success">{budget.savings}%</p>
                   </div>
                   {budgetAmounts && (
@@ -169,7 +171,7 @@ const Budget = () => {
               <Card className="glass-card p-4 border-l-4 border-primary">
                 <div className="flex justify-between items-center">
                   <div>
-                    <p className="text-sm text-muted-foreground">Necessities</p>
+                    <p className="text-sm text-muted-foreground">{t('budget.necessities')}</p>
                     <p className="text-2xl font-display font-bold text-primary">{budget.necessities}%</p>
                   </div>
                   {budgetAmounts && (
@@ -181,7 +183,7 @@ const Budget = () => {
               <Card className="glass-card p-4 border-l-4 border-secondary">
                 <div className="flex justify-between items-center">
                   <div>
-                    <p className="text-sm text-muted-foreground">Wants</p>
+                    <p className="text-sm text-muted-foreground">{t('budget.wants')}</p>
                     <p className="text-2xl font-display font-bold text-secondary">{budget.wants}%</p>
                   </div>
                   {budgetAmounts && (
@@ -193,7 +195,7 @@ const Budget = () => {
               <Card className="glass-card p-4 border-l-4 border-accent">
                 <div className="flex justify-between items-center">
                   <div>
-                    <p className="text-sm text-muted-foreground">Investments</p>
+                    <p className="text-sm text-muted-foreground">{t('budget.investments')}</p>
                     <p className="text-2xl font-display font-bold text-accent">{budget.investments}%</p>
                   </div>
                   {budgetAmounts && (
@@ -207,9 +209,9 @@ const Budget = () => {
                   <div className="flex items-start gap-3">
                     <TrendingUp className="w-5 h-5 text-warning mt-0.5" />
                     <div>
-                      <p className="font-semibold text-warning">Add Income Data</p>
+                      <p className="font-semibold text-warning">{t('budget.addIncomeData')}</p>
                       <p className="text-sm text-muted-foreground">
-                        To see actual amounts, add your monthly income in the Income Manager.
+                        {t('budget.addIncomeDataDesc')}
                       </p>
                     </div>
                   </div>

@@ -1,56 +1,220 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, TrendingUp, Calendar, DollarSign } from 'lucide-react';
+import { Plus, TrendingUp, Calendar, DollarSign, Wallet, Banknote, CreditCard, Tag, Trash2, Pencil, type LucideIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card } from '@/components/ui/card';
 import { getIncome, addIncome, IncomeEntry } from '@/lib/storage';
+import { api } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
+import { useTranslation } from 'react-i18next';
+import * as Icons from 'lucide-react';
+
+interface Account {
+  id: string;
+  name: string;
+  type: 'ccp' | 'cash' | 'creditcard';
+}
+
+interface Category {
+  id: string;
+  name: string;
+  icon: string;
+  type?: 'income' | 'expense' | 'both';
+}
 
 const Income = () => {
   const { toast } = useToast();
-  const [income, setIncome] = useState<IncomeEntry[]>(getIncome());
+  const { t, i18n } = useTranslation();
+  const [income, setIncome] = useState<IncomeEntry[]>([]);
+  const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [editingIncome, setEditingIncome] = useState<IncomeEntry | null>(null);
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [formData, setFormData] = useState({
     amount: '',
     source: '',
     category: '',
     date: format(new Date(), 'yyyy-MM-dd'),
-    description: ''
+    description: '',
+    account_id: '',
+    account_type: '' as 'ccp' | 'cash' | 'creditcard' | ''
   });
 
-  const categories = ['Freelancing', 'Digital Services', 'Design Work', 'Consulting', 'Other'];
+  useEffect(() => {
+    loadIncome();
+    loadSettings();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const loadSettings = async () => {
+    try {
+      const settings = await api.getSettings();
+      setAccounts(settings.accounts || []);
+      // Filter categories for income (type: 'income' or 'both')
+      const incomeCategories = (settings.custom_categories || []).filter(
+        (cat: Category) => !cat.type || cat.type === 'income' || cat.type === 'both'
+      );
+      setCategories(incomeCategories);
+    } catch (error) {
+      console.error('Error loading settings:', error);
+    }
+  };
+
+  const getIconComponent = (iconName: string): LucideIcon => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const Icon = (Icons as any)[iconName] as LucideIcon;
+    return Icon || Tag;
+  };
+
+  const loadIncome = async () => {
+    try {
+      setLoading(true);
+      const data = await getIncome();
+      setIncome(data);
+    } catch (error) {
+      console.error('Error loading income:', error);
+      toast({
+        title: t('income.errorLoading'),
+        description: t('income.errorLoadingDesc'),
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Categories are now loaded from settings
+
+  const handleEdit = (entry: IncomeEntry) => {
+    setEditingIncome(entry);
+    setFormData({
+      amount: entry.amount.toString(),
+      source: entry.source || '',
+      category: entry.category || '',
+      date: entry.date,
+      description: entry.description || '',
+      account_id: entry.account_id || '',
+      account_type: entry.account_type || ''
+    });
+    setShowForm(true);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    const newEntry: IncomeEntry = {
-      id: Date.now().toString(),
-      amount: parseFloat(formData.amount),
+    console.log('🟢 [INCOME PAGE] Form submitted');
+    console.log('📝 [INCOME PAGE] Form data:', {
+      amount: formData.amount,
       source: formData.source,
       category: formData.category,
       date: formData.date,
-      description: formData.description
-    };
-
-    addIncome(newEntry);
-    setIncome(getIncome());
-    setShowForm(false);
-    setFormData({
-      amount: '',
-      source: '',
-      category: '',
-      date: format(new Date(), 'yyyy-MM-dd'),
-      description: ''
+      description: formData.description,
+      account_id: formData.account_id,
+      account_type: formData.account_type
     });
+    
+    // Get account type from selected account
+    let accountType = formData.account_type;
+    if (formData.account_id && !accountType) {
+      const selectedAccount = accounts.find(a => a.id === formData.account_id);
+      if (selectedAccount) {
+        accountType = selectedAccount.type;
+        console.log('💳 [INCOME PAGE] Found account type from selected account:', accountType);
+      }
+    }
 
-    toast({
-      title: 'Income Added',
-      description: `Successfully recorded ${newEntry.amount} DZD from ${newEntry.source}`,
-    });
+    try {
+      if (editingIncome) {
+        // Update existing income
+        console.log('✏️ [INCOME PAGE] Updating income entry:', editingIncome.id);
+        await api.updateIncome(editingIncome.id, {
+          amount: parseFloat(formData.amount),
+          source: formData.source,
+          category: formData.category,
+          date: formData.date,
+          description: formData.description,
+          account_id: formData.account_id || undefined,
+          account_type: accountType || undefined
+        });
+        console.log('✅ [INCOME PAGE] Income updated successfully');
+        toast({
+          title: t('income.incomeUpdated'),
+          description: t('income.incomeUpdatedDesc', { amount: parseFloat(formData.amount), source: formData.source }),
+        });
+      } else {
+        // Add new income
+        const newEntry: IncomeEntry = {
+          id: crypto.randomUUID(),
+          amount: parseFloat(formData.amount),
+          source: formData.source,
+          category: formData.category,
+          date: formData.date,
+          description: formData.description,
+          account_id: formData.account_id || undefined,
+          account_type: accountType || undefined
+        };
+
+        console.log('📦 [INCOME PAGE] Created income entry object:', newEntry);
+        console.log('🚀 [INCOME PAGE] Calling addIncome()...');
+        await addIncome(newEntry);
+        console.log('✅ [INCOME PAGE] addIncome() completed successfully');
+        
+        // Also add to account_transactions for synchronization
+        if (formData.account_id && accountType) {
+          const transactionData = {
+            type: 'income',
+            amount: newEntry.amount,
+            name: newEntry.source,
+            category: newEntry.category || null,
+            date: newEntry.date,
+            account_id: formData.account_id,
+            account_type: accountType,
+            note: newEntry.description || null
+          };
+          console.log('💳 [INCOME PAGE] Adding account transaction:', transactionData);
+          await api.addAccountTransaction(transactionData);
+          console.log('✅ [INCOME PAGE] Account transaction added');
+        } else {
+          console.log('⚠️ [INCOME PAGE] Skipping account_transactions (no account_id or account_type)');
+        }
+        toast({
+          title: t('income.incomeAdded'),
+          description: t('income.incomeAddedDesc', { amount: newEntry.amount, source: newEntry.source }),
+        });
+      }
+      
+      console.log('🔄 [INCOME PAGE] Reloading income list...');
+      await loadIncome();
+      console.log('✅ [INCOME PAGE] Income list reloaded');
+      setShowForm(false);
+      setEditingIncome(null);
+      setFormData({
+        amount: '',
+        source: '',
+        category: '',
+        date: format(new Date(), 'yyyy-MM-dd'),
+        description: '',
+        account_id: '',
+        account_type: ''
+      });
+    } catch (error) {
+      console.error('❌ [INCOME PAGE] Error in handleSubmit:', error);
+      console.error('❌ [INCOME PAGE] Error details:', {
+        message: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        editingIncome
+      });
+      toast({
+        title: editingIncome ? t('income.errorUpdating') : t('income.errorAdding'),
+        description: editingIncome ? t('income.errorUpdatingDesc') : t('income.errorAddingDesc'),
+        variant: 'destructive',
+      });
+    }
   };
 
   const totalIncome = income.reduce((sum, entry) => sum + entry.amount, 0);
@@ -63,15 +227,27 @@ const Income = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-4xl font-display font-bold mb-2">Income Manager</h1>
-          <p className="text-muted-foreground">Track and manage your income sources</p>
+          <h1 className="text-4xl font-display font-bold mb-2">{t('income.title')}</h1>
+          <p className="text-muted-foreground">{t('income.subtitle')}</p>
         </div>
         <Button 
-          onClick={() => setShowForm(!showForm)}
+          onClick={() => {
+            setShowForm(!showForm);
+            setEditingIncome(null);
+            setFormData({
+              amount: '',
+              source: '',
+              category: '',
+              date: format(new Date(), 'yyyy-MM-dd'),
+              description: '',
+              account_id: '',
+              account_type: ''
+            });
+          }}
           className="gradient-success text-white"
         >
           <Plus className="w-5 h-5 mr-2" />
-          Add Income
+          {t('income.addIncome')}
         </Button>
       </div>
 
@@ -83,7 +259,7 @@ const Income = () => {
               <TrendingUp className="w-8 h-8 text-white" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Monthly Income</p>
+              <p className="text-sm text-muted-foreground">{t('income.monthlyIncome')}</p>
               <p className="text-3xl font-display font-bold">{monthlyIncome.toLocaleString()} DZD</p>
             </div>
           </div>
@@ -95,7 +271,7 @@ const Income = () => {
               <DollarSign className="w-8 h-8 text-white" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Total Income</p>
+              <p className="text-sm text-muted-foreground">{t('income.totalIncome')}</p>
               <p className="text-3xl font-display font-bold">{totalIncome.toLocaleString()} DZD</p>
             </div>
           </div>
@@ -109,11 +285,13 @@ const Income = () => {
           animate={{ opacity: 1, y: 0 }}
         >
           <Card className="glass-card p-6">
-            <h3 className="text-xl font-display font-semibold mb-4">Add New Income</h3>
+            <h3 className="text-xl font-display font-semibold mb-4">
+              {editingIncome ? t('common.edit') : t('income.addNew')}
+            </h3>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="amount">Amount (DZD)</Label>
+                  <Label htmlFor="amount">{t('income.amount')}</Label>
                   <Input
                     id="amount"
                     type="number"
@@ -125,35 +303,48 @@ const Income = () => {
                 </div>
 
                 <div>
-                  <Label htmlFor="source">Source</Label>
+                  <Label htmlFor="source">{t('income.source')}</Label>
                   <Input
                     id="source"
                     required
                     value={formData.source}
                     onChange={(e) => setFormData({ ...formData, source: e.target.value })}
-                    placeholder="e.g., Client Name"
+                    placeholder={t('income.clientName')}
                   />
                 </div>
 
                 <div>
-                  <Label htmlFor="category">Category</Label>
+                  <Label htmlFor="category">{t('income.category')}</Label>
                   <Select
                     value={formData.category}
                     onValueChange={(value) => setFormData({ ...formData, category: value })}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select category" />
+                      <SelectValue placeholder={t('income.selectCategory')} />
                     </SelectTrigger>
                     <SelectContent>
-                      {categories.map(cat => (
-                        <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                      ))}
+                      {categories.map(cat => {
+                        const Icon = getIconComponent(cat.icon);
+                        return (
+                          <SelectItem key={cat.id} value={cat.name}>
+                            <div className="flex items-center gap-2">
+                              <Icon className="w-4 h-4" />
+                              <span>{cat.name}</span>
+                            </div>
+                          </SelectItem>
+                        );
+                      })}
+                      {categories.length === 0 && (
+                        <SelectItem value="none" disabled>
+                          {t('income.noCategories')}
+                        </SelectItem>
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div>
-                  <Label htmlFor="date">Date</Label>
+                  <Label htmlFor="date">{t('income.date')}</Label>
                   <Input
                     id="date"
                     type="date"
@@ -164,22 +355,74 @@ const Income = () => {
                 </div>
               </div>
 
-              <div>
-                <Label htmlFor="description">Description (Optional)</Label>
-                <Input
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Additional notes..."
-                />
-              </div>
+                <div>
+                  <Label htmlFor="account">{t('income.paymentMethod')} *</Label>
+                  <Select 
+                    value={formData.account_id} 
+                    onValueChange={(value) => {
+                      const selectedAccount = accounts.find(a => a.id === value);
+                      setFormData({ 
+                        ...formData, 
+                        account_id: value,
+                        account_type: selectedAccount?.type || ''
+                      });
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder={t('income.selectAccount')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {accounts.length > 0 ? (
+                        accounts.map((account) => (
+                          <SelectItem key={account.id} value={account.id}>
+                            <div className="flex items-center gap-2">
+                              {account.type === 'ccp' && <Banknote className="w-4 h-4" />}
+                              {account.type === 'cash' && <Wallet className="w-4 h-4" />}
+                              {account.type === 'creditcard' && <CreditCard className="w-4 h-4" />}
+                              <span>{account.name}</span>
+                              <span className="text-xs text-muted-foreground">
+                                ({account.type === 'ccp' ? t('income.bankAccount') : account.type === 'cash' ? t('income.cash') : t('income.creditCard')})
+                              </span>
+                            </div>
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <SelectItem value="none" disabled>
+                          {t('income.noAccounts')}
+                        </SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="description">{t('income.description')}</Label>
+                  <Input
+                    id="description"
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    placeholder={t('income.additionalNotes')}
+                  />
+                </div>
 
               <div className="flex gap-3">
                 <Button type="submit" className="gradient-success text-white">
-                  Add Income
+                  {editingIncome ? t('common.save') : t('income.addIncome')}
                 </Button>
-                <Button type="button" variant="outline" onClick={() => setShowForm(false)}>
-                  Cancel
+                <Button type="button" variant="outline" onClick={() => {
+                  setShowForm(false);
+                  setEditingIncome(null);
+                  setFormData({
+                    amount: '',
+                    source: '',
+                    category: '',
+                    date: format(new Date(), 'yyyy-MM-dd'),
+                    description: '',
+                    account_id: '',
+                    account_type: ''
+                  });
+                }}>
+                  {t('common.cancel')}
                 </Button>
               </div>
             </form>
@@ -189,11 +432,11 @@ const Income = () => {
 
       {/* Income List */}
       <Card className="glass-card p-6">
-        <h3 className="text-xl font-display font-semibold mb-4">Recent Income</h3>
+        <h3 className="text-xl font-display font-semibold mb-4">{t('income.recentIncome')}</h3>
         {income.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">
             <TrendingUp className="w-12 h-12 mx-auto mb-4 opacity-50" />
-            <p>No income recorded yet. Add your first entry!</p>
+            <p>{t('income.noIncome')}</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -204,11 +447,11 @@ const Income = () => {
                 animate={{ opacity: 1 }}
                 className="flex items-center justify-between p-4 rounded-xl bg-muted/50 hover:bg-muted transition-colors"
               >
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-4 flex-1">
                   <div className="p-3 rounded-lg gradient-success">
                     <TrendingUp className="w-5 h-5 text-white" />
                   </div>
-                  <div>
+                  <div className="flex-1">
                     <p className="font-semibold">{entry.source}</p>
                     <p className="text-sm text-muted-foreground">{entry.category}</p>
                     {entry.description && (
@@ -216,13 +459,72 @@ const Income = () => {
                     )}
                   </div>
                 </div>
-                <div className="text-right">
-                  <p className="text-xl font-display font-bold text-success">
-                    +{entry.amount.toLocaleString()} DZD
-                  </p>
-                  <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
-                    <Calendar className="w-3 h-3" />
-                    {format(new Date(entry.date), 'MMM dd, yyyy')}
+                <div className="flex items-center gap-3">
+                  <div className="text-right">
+                    <p className="text-xl font-display font-bold text-success">
+                      +{entry.amount.toLocaleString()} DZD
+                    </p>
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
+                      <Calendar className="w-3 h-3" />
+                      {format(new Date(entry.date), 'MMM dd, yyyy')}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      onClick={() => handleEdit(entry)}
+                      variant="ghost"
+                      size="icon"
+                      className="text-primary hover:text-primary hover:bg-primary/10"
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      onClick={async () => {
+                        console.log('🗑️  [INCOME] Delete button clicked');
+                        console.log('🆔 [INCOME] Entry ID:', entry.id);
+                        console.log('📦 [INCOME] Full entry:', entry);
+                        
+                        if (!entry.id) {
+                          console.error('❌ [INCOME] Entry ID is missing!');
+                          toast({
+                            title: t('errors.errorDeleting'),
+                            description: 'Entry ID is missing',
+                            variant: 'destructive',
+                          });
+                          return;
+                        }
+                        
+                        if (confirm(t('income.confirmDelete'))) {
+                          try {
+                            console.log('🚀 [INCOME] Calling api.deleteIncome with ID:', entry.id);
+                            await api.deleteIncome(entry.id);
+                            console.log('✅ [INCOME] Delete successful, reloading...');
+                            await loadIncome();
+                            toast({
+                              title: t('success.deleted'),
+                              description: t('income.incomeDeleted'),
+                            });
+                          } catch (error) {
+                            console.error('❌ [INCOME] Error deleting income:', error);
+                            console.error('❌ [INCOME] Error details:', {
+                              message: error instanceof Error ? error.message : String(error),
+                              entryId: entry.id,
+                              entry
+                            });
+                            toast({
+                              title: t('errors.errorDeleting'),
+                              description: error instanceof Error ? error.message : t('errors.couldNotDelete'),
+                              variant: 'destructive',
+                            });
+                          }
+                        }
+                      }}
+                      variant="ghost"
+                      size="icon"
+                      className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
                   </div>
                 </div>
               </motion.div>

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Plus, Briefcase, Clock, DollarSign, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -7,14 +7,17 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { getProjects, addProject, setProjects, Project } from '@/lib/storage';
+import { getProjects, addProject, updateProject, Project } from '@/lib/storage';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { getPrioritizationAdvice } from '@/lib/ai-service';
+import { useTranslation } from 'react-i18next';
 
 const Projects = () => {
   const { toast } = useToast();
-  const [projects, setProjectsState] = useState<Project[]>(getProjects());
+  const { t } = useTranslation();
+  const [projects, setProjectsState] = useState<Project[]>([]);
+  const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [aiAdvice, setAiAdvice] = useState<string>('');
   const [loadingAdvice, setLoadingAdvice] = useState(false);
@@ -27,11 +30,32 @@ const Projects = () => {
     hoursSpent: '0'
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    loadProjects();
+  }, []);
+
+  const loadProjects = async () => {
+    try {
+      setLoading(true);
+      const data = await getProjects();
+      setProjectsState(data);
+    } catch (error) {
+      console.error('Error loading projects:', error);
+      toast({
+        title: t('projects.errorLoading'),
+        description: t('projects.errorLoadingDesc'),
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     const newProject: Project = {
-      id: Date.now().toString(),
+      id: crypto.randomUUID(),
       name: formData.name,
       client: formData.client,
       deadline: formData.deadline,
@@ -40,22 +64,30 @@ const Projects = () => {
       hoursSpent: parseFloat(formData.hoursSpent)
     };
 
-    addProject(newProject);
-    setProjectsState(getProjects());
-    setShowForm(false);
-    setFormData({
-      name: '',
-      client: '',
-      deadline: format(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd'),
-      expectedEarnings: '',
-      status: 'ongoing',
-      hoursSpent: '0'
-    });
+    try {
+      await addProject(newProject);
+      await loadProjects();
+      setShowForm(false);
+      setFormData({
+        name: '',
+        client: '',
+        deadline: format(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd'),
+        expectedEarnings: '',
+        status: 'ongoing',
+        hoursSpent: '0'
+      });
 
-    toast({
-      title: 'Project Added',
-      description: `${newProject.name} has been added to your projects`,
-    });
+      toast({
+        title: t('projects.projectAdded'),
+        description: t('projects.projectAddedDesc', { name: newProject.name }),
+      });
+    } catch (error) {
+      toast({
+        title: t('projects.errorAdding'),
+        description: t('projects.errorAddingDesc'),
+        variant: 'destructive',
+      });
+    }
   };
 
   const loadAIAdvice = async () => {
@@ -65,8 +97,8 @@ const Projects = () => {
       setAiAdvice(advice);
     } catch (error) {
       toast({
-        title: 'AI Advice Failed',
-        description: 'Could not generate project prioritization advice',
+        title: t('projects.aiAdviceFailed'),
+        description: t('projects.aiAdviceFailedDesc'),
         variant: 'destructive',
       });
     } finally {
@@ -74,16 +106,21 @@ const Projects = () => {
     }
   };
 
-  const updateProjectStatus = (projectId: string, newStatus: 'ongoing' | 'completed' | 'pending') => {
-    const updated = projects.map(p => 
-      p.id === projectId ? { ...p, status: newStatus } : p
-    );
-    setProjects(updated);
-    setProjectsState(updated);
-    toast({
-      title: 'Project Updated',
-      description: 'Project status has been changed',
-    });
+  const updateProjectStatus = async (projectId: string, newStatus: 'ongoing' | 'completed' | 'pending') => {
+    try {
+      await updateProject(projectId, { status: newStatus });
+      await loadProjects();
+      toast({
+        title: t('projects.projectUpdated'),
+        description: t('projects.projectUpdatedDesc'),
+      });
+    } catch (error) {
+      toast({
+        title: t('projects.errorUpdating'),
+        description: t('projects.errorUpdatingDesc'),
+        variant: 'destructive',
+      });
+    }
   };
 
   const ongoingProjects = projects.filter(p => p.status === 'ongoing');
@@ -103,15 +140,15 @@ const Projects = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-4xl font-display font-bold mb-2">Project Manager</h1>
-          <p className="text-muted-foreground">Track your freelance projects and deadlines</p>
+          <h1 className="text-4xl font-display font-bold mb-2">{t('projects.title')}</h1>
+          <p className="text-muted-foreground">{t('projects.subtitle')}</p>
         </div>
         <Button 
           onClick={() => setShowForm(!showForm)}
           className="gradient-primary text-white"
         >
           <Plus className="w-5 h-5 mr-2" />
-          New Project
+          {t('projects.addProject')}
         </Button>
       </div>
 
@@ -123,7 +160,7 @@ const Projects = () => {
               <Briefcase className="w-8 h-8 text-white" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Active Projects</p>
+              <p className="text-sm text-muted-foreground">{t('projects.activeProjects')}</p>
               <p className="text-3xl font-display font-bold">{ongoingProjects.length}</p>
             </div>
           </div>
@@ -135,7 +172,7 @@ const Projects = () => {
               <DollarSign className="w-8 h-8 text-white" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Expected Earnings</p>
+              <p className="text-sm text-muted-foreground">{t('projects.totalEarnings')}</p>
               <p className="text-3xl font-display font-bold">{totalExpectedEarnings.toLocaleString()} DZD</p>
             </div>
           </div>
@@ -147,7 +184,7 @@ const Projects = () => {
               <Clock className="w-8 h-8 text-white" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Total Hours</p>
+              <p className="text-sm text-muted-foreground">{t('common.hours')}</p>
               <p className="text-3xl font-display font-bold">
                 {projects.reduce((sum, p) => sum + p.hoursSpent, 0)}h
               </p>
@@ -160,14 +197,14 @@ const Projects = () => {
       {ongoingProjects.length > 0 && (
         <Card className="glass-card p-6 border-accent/30">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-xl font-display font-semibold">AI Project Prioritization</h3>
+            <h3 className="text-xl font-display font-semibold">{t('projects.aiAdvice')}</h3>
             <Button 
               onClick={loadAIAdvice} 
               disabled={loadingAdvice}
               variant="outline"
               className="border-accent text-accent hover:bg-accent/10"
             >
-              {loadingAdvice ? 'Analyzing...' : 'Get AI Advice'}
+              {loadingAdvice ? t('common.loading') : t('projects.getAdvice')}
             </Button>
           </div>
           {aiAdvice ? (
@@ -176,7 +213,7 @@ const Projects = () => {
             </div>
           ) : (
             <p className="text-muted-foreground text-sm">
-              Get AI-powered advice on which projects to prioritize based on deadlines and earnings
+              {t('projects.aiAdviceDesc')}
             </p>
           )}
         </Card>
@@ -189,33 +226,33 @@ const Projects = () => {
           animate={{ opacity: 1, y: 0 }}
         >
           <Card className="glass-card p-6">
-            <h3 className="text-xl font-display font-semibold mb-4">Add New Project</h3>
+            <h3 className="text-xl font-display font-semibold mb-4">{t('projects.addProject')}</h3>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="name">Project Name</Label>
+                  <Label htmlFor="name">{t('projects.projectName')}</Label>
                   <Input
                     id="name"
                     required
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    placeholder="Website Design"
+                    placeholder={t('projects.projectName')}
                   />
                 </div>
 
                 <div>
-                  <Label htmlFor="client">Client</Label>
+                  <Label htmlFor="client">{t('projects.client')}</Label>
                   <Input
                     id="client"
                     required
                     value={formData.client}
                     onChange={(e) => setFormData({ ...formData, client: e.target.value })}
-                    placeholder="Client Name"
+                    placeholder={t('projects.client')}
                   />
                 </div>
 
                 <div>
-                  <Label htmlFor="deadline">Deadline</Label>
+                  <Label htmlFor="deadline">{t('projects.deadline')}</Label>
                   <Input
                     id="deadline"
                     type="date"
@@ -226,7 +263,7 @@ const Projects = () => {
                 </div>
 
                 <div>
-                  <Label htmlFor="expectedEarnings">Expected Earnings (DZD)</Label>
+                  <Label htmlFor="expectedEarnings">{t('projects.expectedEarnings')}</Label>
                   <Input
                     id="expectedEarnings"
                     type="number"
@@ -238,7 +275,7 @@ const Projects = () => {
                 </div>
 
                 <div>
-                  <Label htmlFor="status">Status</Label>
+                  <Label htmlFor="status">{t('projects.status')}</Label>
                   <Select
                     value={formData.status}
                     onValueChange={(value: any) => setFormData({ ...formData, status: value })}
@@ -247,15 +284,15 @@ const Projects = () => {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="pending">Pending</SelectItem>
-                      <SelectItem value="ongoing">Ongoing</SelectItem>
-                      <SelectItem value="completed">Completed</SelectItem>
+                      <SelectItem value="pending">{t('projects.pending')}</SelectItem>
+                      <SelectItem value="ongoing">{t('projects.ongoing')}</SelectItem>
+                      <SelectItem value="completed">{t('projects.completed')}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div>
-                  <Label htmlFor="hoursSpent">Hours Spent</Label>
+                  <Label htmlFor="hoursSpent">{t('projects.hoursSpent')}</Label>
                   <Input
                     id="hoursSpent"
                     type="number"
@@ -268,10 +305,10 @@ const Projects = () => {
 
               <div className="flex gap-3">
                 <Button type="submit" className="gradient-primary text-white">
-                  Add Project
+                  {t('projects.addProject')}
                 </Button>
                 <Button type="button" variant="outline" onClick={() => setShowForm(false)}>
-                  Cancel
+                  {t('common.cancel')}
                 </Button>
               </div>
             </form>
@@ -281,11 +318,11 @@ const Projects = () => {
 
       {/* Projects List */}
       <div className="space-y-4">
-        <h3 className="text-xl font-display font-semibold">All Projects</h3>
+        <h3 className="text-xl font-display font-semibold">{t('projects.title')}</h3>
         {projects.length === 0 ? (
           <Card className="glass-card p-12 text-center">
             <Briefcase className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-50" />
-            <p className="text-muted-foreground">No projects yet. Add your first freelance project!</p>
+            <p className="text-muted-foreground">{t('projects.noProjects')}</p>
           </Card>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -302,14 +339,16 @@ const Projects = () => {
                       <p className="text-sm text-muted-foreground">{project.client}</p>
                     </div>
                     <Badge className={getStatusColor(project.status)}>
-                      {project.status}
+                      {project.status === 'ongoing' ? t('projects.ongoing') : 
+                       project.status === 'completed' ? t('projects.completed') : 
+                       t('projects.pending')}
                     </Badge>
                   </div>
 
                   <div className="space-y-2 mb-4">
                     <div className="flex items-center gap-2 text-sm">
                       <Calendar className="w-4 h-4 text-muted-foreground" />
-                      <span>Due: {format(new Date(project.deadline), 'MMM dd, yyyy')}</span>
+                      <span>{t('projects.due')}: {format(new Date(project.deadline), 'MMM dd, yyyy')}</span>
                     </div>
                     <div className="flex items-center gap-2 text-sm">
                       <DollarSign className="w-4 h-4 text-muted-foreground" />
@@ -317,7 +356,7 @@ const Projects = () => {
                     </div>
                     <div className="flex items-center gap-2 text-sm">
                       <Clock className="w-4 h-4 text-muted-foreground" />
-                      <span>{project.hoursSpent} hours logged</span>
+                      <span>{project.hoursSpent} {t('projects.hoursLogged')}</span>
                     </div>
                   </div>
 
@@ -329,7 +368,7 @@ const Projects = () => {
                         onClick={() => updateProjectStatus(project.id, 'completed')}
                         className="border-success text-success hover:bg-success/10"
                       >
-                        Mark Complete
+                        {t('projects.markComplete')}
                       </Button>
                     )}
                     {project.status === 'pending' && (
@@ -339,7 +378,7 @@ const Projects = () => {
                         onClick={() => updateProjectStatus(project.id, 'ongoing')}
                         className="border-primary text-primary hover:bg-primary/10"
                       >
-                        Start Project
+                        {t('projects.startProject')}
                       </Button>
                     )}
                   </div>

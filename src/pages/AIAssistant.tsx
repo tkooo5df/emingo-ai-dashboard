@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Bot, Send, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -6,6 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { askAssistant } from '@/lib/ai-service';
 import { useToast } from '@/hooks/use-toast';
+import { api } from '@/lib/api';
+import { useTranslation } from 'react-i18next';
 
 interface Message {
   id: string;
@@ -16,16 +18,37 @@ interface Message {
 
 const AIAssistant = () => {
   const { toast } = useToast();
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      role: 'assistant',
-      content: "Hi Amine! I'm your AI financial and productivity assistant. I can help you with:\n\n• Analyzing your spending and income\n• Budget optimization advice\n• Project prioritization tips\n• Goal achievement strategies\n• General financial guidance\n\nWhat can I help you with today?",
-      timestamp: new Date()
-    }
-  ]);
+  const { t } = useTranslation();
+  const [userName, setUserName] = useState('User');
+  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Load user profile to get name
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        const profile = await api.getProfile();
+        if (profile && profile.name) {
+          setUserName(profile.name);
+        }
+      } catch (error) {
+        console.error('Error loading profile for AI Assistant:', error);
+      }
+    };
+    loadProfile();
+  }, []);
+
+  // Initialize welcome message with user's name
+  useEffect(() => {
+    const welcomeMessage: Message = {
+      id: '1',
+      role: 'assistant',
+      content: t('aiAssistant.welcome', { name: userName }),
+      timestamp: new Date()
+    };
+    setMessages([welcomeMessage]);
+  }, [userName]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,8 +76,8 @@ const AIAssistant = () => {
       setMessages(prev => [...prev, assistantMessage]);
     } catch (error) {
       toast({
-        title: 'AI Error',
-        description: 'Failed to get AI response. Please try again.',
+        title: t('aiAssistant.aiError'),
+        description: t('aiAssistant.aiErrorDesc'),
         variant: 'destructive',
       });
     } finally {
@@ -63,18 +86,18 @@ const AIAssistant = () => {
   };
 
   const quickPrompts = [
-    "How can I increase my freelance income?",
-    "Give me tips to reduce my expenses",
-    "How should I prioritize my projects?",
-    "What's the best way to save as a student?"
+    t('aiAssistant.quickPrompt1'),
+    t('aiAssistant.quickPrompt2'),
+    t('aiAssistant.quickPrompt3'),
+    t('aiAssistant.quickPrompt4')
   ];
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-4xl font-display font-bold mb-2">AI Assistant</h1>
-        <p className="text-muted-foreground">Your personal financial and productivity advisor</p>
+        <h1 className="text-4xl font-display font-bold mb-2">{t('aiAssistant.title')}</h1>
+        <p className="text-muted-foreground">{t('aiAssistant.subtitle')}</p>
       </div>
 
       {/* Chat Container */}
@@ -147,7 +170,7 @@ const AIAssistant = () => {
         {/* Quick Prompts */}
         {messages.length === 1 && (
           <div className="mb-4">
-            <p className="text-sm text-muted-foreground mb-3">Quick questions:</p>
+            <p className="text-sm text-muted-foreground mb-3">{t('aiAssistant.quickQuestions')}</p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
               {quickPrompts.map((prompt, index) => (
                 <button
@@ -170,7 +193,7 @@ const AIAssistant = () => {
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask me anything about your finances or goals..."
+            placeholder={t('aiAssistant.placeholder')}
             disabled={loading}
             className="flex-1"
           />
@@ -187,23 +210,23 @@ const AIAssistant = () => {
       {/* Info Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="glass-card p-4 border-primary/30">
-          <h4 className="font-display font-semibold mb-2">Financial Analysis</h4>
+          <h4 className="font-display font-semibold mb-2">{t('aiAssistant.financialAnalysis')}</h4>
           <p className="text-sm text-muted-foreground">
-            Get insights on your spending patterns and income sources
+            {t('aiAssistant.financialAnalysisDesc')}
           </p>
         </Card>
 
         <Card className="glass-card p-4 border-accent/30">
-          <h4 className="font-display font-semibold mb-2">Smart Recommendations</h4>
+          <h4 className="font-display font-semibold mb-2">{t('aiAssistant.smartRecommendations')}</h4>
           <p className="text-sm text-muted-foreground">
-            Receive personalized advice based on your financial data
+            {t('aiAssistant.smartRecommendationsDesc')}
           </p>
         </Card>
 
         <Card className="glass-card p-4 border-success/30">
-          <h4 className="font-display font-semibold mb-2">Goal Coaching</h4>
+          <h4 className="font-display font-semibold mb-2">{t('aiAssistant.goalCoaching')}</h4>
           <p className="text-sm text-muted-foreground">
-            Get motivation and strategies to achieve your goals faster
+            {t('aiAssistant.goalCoachingDesc')}
           </p>
         </Card>
       </div>
