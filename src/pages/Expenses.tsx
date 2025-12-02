@@ -106,31 +106,21 @@ const Expenses = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    console.log('🔴 [EXPENSES PAGE] Form submitted');
-    console.log('📝 [EXPENSES PAGE] Form data:', {
-      amount: formData.amount,
-      category: formData.category,
-      date: formData.date,
-      description: formData.description,
-      account_id: formData.account_id,
-      account_type: formData.account_type
-    });
-    
+
     // Get account type from selected account
     let accountType = formData.account_type;
     if (formData.account_id && !accountType) {
       const selectedAccount = accounts.find(a => a.id === formData.account_id);
       if (selectedAccount) {
         accountType = selectedAccount.type;
-        console.log('💳 [EXPENSES PAGE] Found account type from selected account:', accountType);
+
       }
     }
 
     try {
       if (editingExpense) {
         // Update existing expense
-        console.log('✏️ [EXPENSES PAGE] Updating expense entry:', editingExpense.id);
+
         await api.updateExpense(editingExpense.id, {
           amount: parseFloat(formData.amount),
           category: formData.category,
@@ -139,7 +129,7 @@ const Expenses = () => {
           account_id: formData.account_id || undefined,
           account_type: accountType || undefined
         });
-        console.log('✅ [EXPENSES PAGE] Expense updated successfully');
+
         toast({
           title: t('expenses.expenseUpdated'),
           description: t('expenses.expenseUpdatedDesc', { amount: parseFloat(formData.amount) }),
@@ -154,12 +144,9 @@ const Expenses = () => {
           description: formData.description,
           account_id: formData.account_id || undefined,
           account_type: accountType || undefined
-        };
+          };
 
-        console.log('📦 [EXPENSES PAGE] Created expense entry object:', newEntry);
-        console.log('🚀 [EXPENSES PAGE] Calling addExpense()...');
-        await addExpense(newEntry);
-        console.log('✅ [EXPENSES PAGE] addExpense() completed successfully');
+          await addExpense(newEntry);
         
         // Also add to account_transactions for synchronization
         if (formData.account_id && accountType) {
@@ -173,21 +160,18 @@ const Expenses = () => {
             account_type: accountType,
             note: newEntry.description || null
           };
-          console.log('💳 [EXPENSES PAGE] Adding account transaction:', transactionData);
+
           await api.addAccountTransaction(transactionData);
-          console.log('✅ [EXPENSES PAGE] Account transaction added');
-        } else {
-          console.log('⚠️ [EXPENSES PAGE] Skipping account_transactions (no account_id or account_type)');
-        }
+
+          }
         toast({
           title: t('expenses.expenseAdded'),
           description: t('expenses.expenseAddedDesc', { amount: newEntry.amount }),
         });
       }
-      
-      console.log('🔄 [EXPENSES PAGE] Reloading expenses list...');
+
       await loadExpenses();
-      console.log('✅ [EXPENSES PAGE] Expenses list reloaded');
+
       setShowForm(false);
       setEditingExpense(null);
       setFormData({
@@ -235,12 +219,12 @@ const Expenses = () => {
     .reduce((sum, entry) => sum + entry.amount, 0);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-4xl font-display font-bold mb-2">{t('expenses.title')}</h1>
-          <p className="text-muted-foreground">{t('expenses.subtitle')}</p>
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex-1 min-w-0">
+          <h1 className="text-xl md:text-4xl font-display font-bold mb-1 md:mb-2">{t('expenses.title')}</h1>
+          <p className="text-xs md:text-base text-muted-foreground">{t('expenses.subtitle')}</p>
         </div>
         <Button 
           onClick={() => {
@@ -255,42 +239,44 @@ const Expenses = () => {
               account_type: ''
             });
           }}
-          className="gradient-accent text-white"
+          className="gradient-accent text-white h-9 px-3 text-xs md:text-sm shrink-0"
+          size="sm"
         >
-          <Plus className="w-5 h-5 mr-2" />
-          {t('expenses.addExpense')}
+          <Plus className="w-4 h-4 md:w-5 md:h-5 mr-1 md:mr-2" />
+          <span className="hidden sm:inline">{t('expenses.addExpense')}</span>
+          <span className="sm:hidden">+</span>
         </Button>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card className="glass-card p-6">
-          <div className="flex items-center gap-4">
-            <div className="p-4 rounded-xl bg-warning">
-              <TrendingDown className="w-8 h-8 text-white" />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-6">
+        <Card className="glass-card p-3 md:p-6">
+          <div className="flex items-center gap-2 md:gap-4">
+            <div className="p-2 md:p-4 rounded-lg md:rounded-xl bg-warning">
+              <TrendingDown className="w-4 h-4 md:w-8 md:h-8 text-white" />
             </div>
-            <div>
-              <p className="text-sm text-muted-foreground">{t('expenses.monthlyExpenses')}</p>
-              <p className="text-3xl font-display font-bold">{monthlyExpenses.toLocaleString()} DZD</p>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs text-muted-foreground">{t('expenses.monthlyExpenses')}</p>
+              <p className="text-lg md:text-3xl font-display font-bold truncate">{monthlyExpenses.toLocaleString()} DZD</p>
             </div>
           </div>
         </Card>
 
-        <Card className="glass-card p-6">
-          <div className="flex items-center gap-4">
-            <div className="p-4 rounded-xl bg-destructive">
-              <AlertCircle className="w-8 h-8 text-white" />
+        <Card className="glass-card p-3 md:p-6">
+          <div className="flex items-center gap-2 md:gap-4">
+            <div className="p-2 md:p-4 rounded-lg md:rounded-xl bg-destructive">
+              <AlertCircle className="w-4 h-4 md:w-8 md:h-8 text-white" />
             </div>
-            <div>
-              <p className="text-sm text-muted-foreground">{t('expenses.totalExpenses')}</p>
-              <p className="text-3xl font-display font-bold">{totalExpenses.toLocaleString()} DZD</p>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs text-muted-foreground">{t('expenses.totalExpenses')}</p>
+              <p className="text-lg md:text-3xl font-display font-bold truncate">{totalExpenses.toLocaleString()} DZD</p>
             </div>
           </div>
         </Card>
       </div>
 
       {/* AI Insights */}
-      <Card className="glass-card p-6 border-accent/30">
+      <Card className="glass-card p-4 md:p-6 border-accent/30">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-xl font-display font-semibold">{t('expenses.aiInsights')}</h3>
           <Button 
@@ -321,7 +307,7 @@ const Expenses = () => {
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <Card className="glass-card p-6">
+          <Card className="glass-card p-4 md:p-6">
             <h3 className="text-xl font-display font-semibold mb-4">
               {editingExpense ? t('common.edit') : t('expenses.addNew')}
             </h3>
@@ -456,11 +442,11 @@ const Expenses = () => {
       )}
 
       {/* Expense List */}
-      <Card className="glass-card p-6">
+      <Card className="glass-card p-4 md:p-6">
         <h3 className="text-xl font-display font-semibold mb-4">{t('expenses.recentExpenses')}</h3>
         {expenses.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">
-            <TrendingDown className="w-12 h-12 mx-auto mb-4 opacity-50" />
+            <TrendingDown className="w-8 h-8 md:w-12 md:h-12 mx-auto mb-4 opacity-50" />
             <p>{t('expenses.noExpenses')}</p>
           </div>
         ) : (
@@ -504,10 +490,7 @@ const Expenses = () => {
                     </Button>
                     <Button
                       onClick={async () => {
-                        console.log('🗑️  [EXPENSES] Delete button clicked');
-                        console.log('🆔 [EXPENSES] Entry ID:', entry.id);
-                        console.log('📦 [EXPENSES] Full entry:', entry);
-                        
+
                         if (!entry.id) {
                           console.error('❌ [EXPENSES] Entry ID is missing!');
                           toast({
@@ -520,9 +503,9 @@ const Expenses = () => {
                         
                         if (confirm(t('expenses.confirmDelete'))) {
                           try {
-                            console.log('🚀 [EXPENSES] Calling api.deleteExpense with ID:', entry.id);
+
                             await api.deleteExpense(entry.id);
-                            console.log('✅ [EXPENSES] Delete successful, reloading...');
+
                             await loadExpenses();
                             toast({
                               title: t('success.deleted'),

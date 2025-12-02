@@ -85,19 +85,8 @@ export const getIncome = async (): Promise<IncomeEntry[]> => {
 
 export const addIncome = async (entry: IncomeEntry): Promise<void> => {
   try {
-    console.log('💾 [STORAGE] addIncome() called');
-    console.log('💾 [STORAGE] Income entry:', {
-      id: entry.id,
-      amount: entry.amount,
-      source: entry.source,
-      category: entry.category,
-      date: entry.date,
-      description: entry.description,
-      account_id: entry.account_id,
-      account_type: entry.account_type
-    });
     const result = await api.addIncome(entry);
-    console.log('✅ [STORAGE] Income added successfully:', result);
+
   } catch (error) {
     console.error('❌ [STORAGE] Error adding income:', error);
     console.error('❌ [STORAGE] Error details:', {
@@ -121,18 +110,8 @@ export const getExpenses = async (): Promise<ExpenseEntry[]> => {
 
 export const addExpense = async (entry: ExpenseEntry): Promise<void> => {
   try {
-    console.log('💾 [STORAGE] addExpense() called');
-    console.log('💾 [STORAGE] Expense entry:', {
-      id: entry.id,
-      amount: entry.amount,
-      category: entry.category,
-      date: entry.date,
-      description: entry.description,
-      account_id: entry.account_id,
-      account_type: entry.account_type
-    });
     const result = await api.addExpense(entry);
-    console.log('✅ [STORAGE] Expense added successfully:', result);
+
   } catch (error) {
     console.error('❌ [STORAGE] Error adding expense:', error);
     console.error('❌ [STORAGE] Error details:', {
@@ -258,7 +237,6 @@ if (typeof window !== 'undefined') {
   if (token) {
     refreshCache().catch(err => {
       // Silently fail if user is not authenticated or cache refresh fails
-      console.debug('Cache refresh skipped:', err.message);
     });
   }
 }

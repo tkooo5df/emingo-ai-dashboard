@@ -37,38 +37,20 @@ i18n
     },
   });
 
-// Log i18n initialization
-console.log('🌐 [i18n] Initialized with language:', i18n.language);
-console.log('🌐 [i18n] Available languages:', Object.keys(i18n.options.resources || {}));
-const storedLang = localStorage.getItem('i18nextLng');
-if (storedLang) {
-  console.log('🌐 [i18n] Found language in localStorage:', storedLang);
-} else {
-  console.log('🌐 [i18n] No language in localStorage, using default:', i18n.language);
-}
+  // Log i18n initialization
+  const storedLang = localStorage.getItem('i18nextLng');
+  if (storedLang) {
+    // Language stored in localStorage
+  }
 
 // Update document direction based on language
 i18n.on('languageChanged', (lng) => {
-  const previousLang = document.documentElement.lang || i18n.language;
-  console.log('🌐 [i18n] Language changed event triggered:', {
-    from: previousLang,
-    to: lng,
-    timestamp: new Date().toISOString()
-  });
-  
   document.documentElement.dir = lng === 'ar' ? 'rtl' : 'ltr';
   document.documentElement.lang = lng;
-  
-  console.log('🌐 [i18n] Document direction updated:', {
-    dir: document.documentElement.dir,
-    lang: document.documentElement.lang
-  });
-  
   // Force a small delay to ensure all components re-render
   setTimeout(() => {
     // Trigger a custom event that components can listen to
     window.dispatchEvent(new Event('languagechange'));
-    console.log('🌐 [i18n] Language change event dispatched to window');
   }, 0);
 });
 

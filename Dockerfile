@@ -4,7 +4,7 @@ FROM node:20-alpine AS builder
 # Install dependencies
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci
+RUN npm ci --legacy-peer-deps
 
 # Build frontend
 COPY . .
@@ -17,7 +17,7 @@ WORKDIR /app
 
 # Install production dependencies
 COPY package*.json ./
-RUN npm ci --only=production
+RUN npm ci --only=production --legacy-peer-deps
 
 # Copy built frontend
 COPY --from=builder /app/dist ./dist

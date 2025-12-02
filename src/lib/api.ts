@@ -5,9 +5,7 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
 // Helper to make authenticated API requests
 async function apiRequest(endpoint: string, options: RequestInit = {}) {
-  console.log(`🌐 [API] Making request to: ${API_BASE_URL}${endpoint}`);
-  console.log(`🌐 [API] Method: ${options.method || 'GET'}`);
-  
+
   const token = await getAccessToken();
   
   if (!token) {
@@ -15,11 +13,11 @@ async function apiRequest(endpoint: string, options: RequestInit = {}) {
     throw new Error('User not authenticated');
   }
 
-  console.log(`🔑 [API] Token found: ${token.substring(0, 20)}...`);
+  
 
   const requestBody = options.body ? JSON.parse(options.body as string) : null;
   if (requestBody) {
-    console.log('📤 [API] Request body:', requestBody);
+
   }
 
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
@@ -30,8 +28,6 @@ async function apiRequest(endpoint: string, options: RequestInit = {}) {
       ...options.headers,
     },
   });
-
-  console.log(`📥 [API] Response status: ${response.status} ${response.statusText}`);
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({ error: 'Unknown error' }));
@@ -45,15 +41,15 @@ async function apiRequest(endpoint: string, options: RequestInit = {}) {
   }
 
   const responseData = await response.json();
-  console.log('✅ [API] Response data:', responseData);
+
   if (Array.isArray(responseData)) {
-    console.log(`✅ [API] Response is array with ${responseData.length} items`);
+
     if (responseData.length > 0) {
-      console.log('✅ [API] First item:', responseData[0]);
+
     }
-  } else if (typeof responseData === 'object') {
-    console.log('✅ [API] Response is object:', JSON.stringify(responseData, null, 2));
-  }
+    } else if (typeof responseData === 'object') {
+      // Handle object response
+    }
   return responseData;
 }
 
@@ -64,12 +60,12 @@ export const api = {
   },
   
   addIncome: async (data: any) => {
-    console.log('📤 [API] Sending income data:', data);
+
     const result = await apiRequest('/income', {
       method: 'POST',
       body: JSON.stringify(data),
     });
-    console.log('✅ [API] Income API response:', result);
+
     return result;
   },
 
@@ -92,12 +88,12 @@ export const api = {
   },
   
   addExpense: async (data: any) => {
-    console.log('📤 [API] Sending expense data:', data);
+
     const result = await apiRequest('/expenses', {
       method: 'POST',
       body: JSON.stringify(data),
     });
-    console.log('✅ [API] Expense API response:', result);
+
     return result;
   },
 
@@ -220,7 +216,7 @@ export const api = {
   },
   
   addAccountTransaction: async (data: any) => {
-    console.log('💳 [API] addAccountTransaction called with:', data);
+
     const transactionPayload = {
       id: data.id,
       type: data.type,
@@ -232,12 +228,12 @@ export const api = {
       account_type: data.account_type,
       note: data.note,
     };
-    console.log('💳 [API] Transaction payload:', transactionPayload);
+
     const result = await apiRequest('/account/transactions', {
       method: 'POST',
       body: JSON.stringify(transactionPayload),
     });
-    console.log('✅ [API] Account transaction result:', result);
+
     return result;
   },
 

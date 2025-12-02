@@ -16,13 +16,20 @@ import {
   Settings,
   LogOut,
   HandCoins,
-  Shield
+  Shield,
+  Globe
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { getTheme, setTheme as saveTheme } from '@/lib/storage';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { api } from '@/lib/api';
 import { signOut, getCurrentUser } from '@/lib/auth';
 import { useToast } from '@/hooks/use-toast';
@@ -62,10 +69,11 @@ const Sidebar = () => {
   const location = useLocation();
   const isMobile = useIsMobile();
   const { toast } = useToast();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [theme, setThemeState] = useState<'light' | 'dark'>('dark');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [currentLanguage, setCurrentLanguage] = useState(i18n.language);
 
   useEffect(() => {
     const savedTheme = getTheme();
@@ -75,22 +83,50 @@ const Sidebar = () => {
     // Check if user is admin
     const checkAdmin = async () => {
       try {
-        const user = await api.getCurrentUser();
+        const user = await getCurrentUser();
         if (user && user.email && user.email.toLowerCase() === 'aminekerkarr@gmail.com') {
           setIsAdmin(true);
         }
       } catch (error) {
-        console.error('Error checking admin status:', error);
+        // Silently fail - user might not be logged in yet
       }
     };
     checkAdmin();
-  }, []);
+
+    // Listen to language changes
+    const handleLanguageChange = (lng: string) => {
+      setCurrentLanguage(lng);
+    };
+    i18n.on('languageChanged', handleLanguageChange);
+    setCurrentLanguage(i18n.language);
+
+    return () => {
+      i18n.off('languageChanged', handleLanguageChange);
+    };
+  }, [i18n]);
 
   const toggleTheme = () => {
     const newTheme = theme === 'dark' ? 'light' : 'dark';
     setThemeState(newTheme);
     saveTheme(newTheme);
     document.documentElement.classList.toggle('dark', newTheme === 'dark');
+  };
+
+  const changeLanguage = (lng: string) => {
+    i18n.changeLanguage(lng);
+    toast({
+      title: t('common.languageChanged'),
+      description: t('common.languageChangedDescription'),
+    });
+  };
+
+  const getLanguageName = (code: string) => {
+    const names: { [key: string]: string } = {
+      en: 'English',
+      ar: 'العربية',
+      fr: 'Français',
+    };
+    return names[code] || code;
   };
 
   const handleLogout = async () => {
@@ -112,7 +148,6 @@ const Sidebar = () => {
 
   const navItems = [
     { path: '/', icon: LayoutDashboard, label: t('common.dashboard') },
-    { path: '/account', icon: Wallet, label: t('common.account') },
     { path: '/income', icon: TrendingUp, label: t('common.income') },
     { path: '/expenses', icon: TrendingDown, label: t('common.expenses') },
     { path: '/debts', icon: HandCoins, label: t('common.debts') },
@@ -133,11 +168,15 @@ const Sidebar = () => {
           animate={{ opacity: 1, y: 0 }}
           className="flex items-center gap-3"
         >
-          <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center">
-            <span className="text-xl font-display font-bold text-white">E</span>
+          <div className="w-10 h-10 flex items-center justify-center">
+            <img 
+              src="/favicon.ico" 
+              alt="EMINGO Logo" 
+              className="w-full h-full object-contain"
+            />
           </div>
           <div>
-            <h1 className="text-xl font-display font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+            <h1 className="text-xl font-display font-bold bg-gradient-to-r from-primary via-accent to-success bg-clip-text text-transparent">
               EMINGO
             </h1>
             <p className="text-xs text-muted-foreground">{t('sidebar.financialDashboard')}</p>
@@ -192,6 +231,30 @@ const Sidebar = () => {
             {theme === 'dark' ? t('sidebar.lightMode') : t('sidebar.darkMode')}
           </span>
         </button>
+
+        {/* Language Switcher */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-muted hover:bg-accent transition-colors">
+              <Globe className="w-5 h-5" />
+              <span className="font-medium flex-1 text-left">{getLanguageName(currentLanguage)}</span>
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuItem onClick={() => changeLanguage('en')} className="cursor-pointer">
+              <span className={currentLanguage === 'en' ? 'font-semibold' : ''}>English</span>
+              {currentLanguage === 'en' && <span className="ml-auto">✓</span>}
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => changeLanguage('ar')} className="cursor-pointer">
+              <span className={currentLanguage === 'ar' ? 'font-semibold' : ''}>العربية</span>
+              {currentLanguage === 'ar' && <span className="ml-auto">✓</span>}
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => changeLanguage('fr')} className="cursor-pointer">
+              <span className={currentLanguage === 'fr' ? 'font-semibold' : ''}>Français</span>
+              {currentLanguage === 'fr' && <span className="ml-auto">✓</span>}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
         
         <UserInfo />
         
@@ -213,11 +276,15 @@ const Sidebar = () => {
         <div className="fixed top-0 left-0 right-0 z-40 bg-card/95 backdrop-blur-xl border-b border-border/50 safe-area-inset-top">
           <div className="flex items-center justify-between h-14 px-4">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center">
-                <span className="text-lg font-display font-bold text-white">E</span>
+              <div className="w-8 h-8 flex items-center justify-center">
+                <img 
+                  src="/favicon.ico" 
+                  alt="EMINGO Logo" 
+                  className="w-full h-full object-contain"
+                />
               </div>
               <div>
-                <h1 className="text-lg font-display font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                <h1 className="text-lg font-display font-bold bg-gradient-to-r from-primary via-accent to-success bg-clip-text text-transparent">
                   EMINGO
                 </h1>
               </div>

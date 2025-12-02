@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { 
   Users, 
@@ -30,23 +30,19 @@ const AdminDashboard = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadUsers();
-  }, []);
-
-  const loadUsers = async () => {
+  const loadUsers = useCallback(async () => {
     try {
       setLoading(true);
-      console.log('🔄 [AdminDashboard] Loading users...');
       const data = await api.getAdminData();
-      console.log('📥 [AdminDashboard] Response received:', {
-        usersCount: data.users?.length || 0,
-        total: data.total,
-        returned: data.returned
-      });
-      
       // Extract only user data from response
-      const usersList = (data.users || []).map((u: any) => ({
+      const usersList = (data.users || []).map((u: {
+        id: string;
+        email: string;
+        name: string | null;
+        avatar_url: string | null;
+        created_at: string;
+        updated_at: string;
+      }) => ({
         id: u.id,
         email: u.email,
         name: u.name,
@@ -54,13 +50,10 @@ const AdminDashboard = () => {
         created_at: u.created_at,
         updated_at: u.updated_at
       }));
-      
-      console.log('✅ [AdminDashboard] Processed users:', usersList.length);
       setUsers(usersList);
       
       // Show warning if counts don't match
       if (data.total && data.total !== usersList.length) {
-        console.warn(`⚠️ [AdminDashboard] Mismatch: Total ${data.total} but showing ${usersList.length}`);
         toast({
           title: t('admin.warning', 'Warning'),
           description: `${usersList.length} ${t('admin.usersLoaded', 'users loaded')} (${data.total} ${t('admin.totalInDB', 'total in database')})`,
@@ -72,21 +65,27 @@ const AdminDashboard = () => {
           description: `${usersList.length} ${t('admin.usersLoaded', 'users loaded')}`,
         });
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('❌ [AdminDashboard] Error loading users:', error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorStack = error instanceof Error ? error.stack : undefined;
       console.error('❌ [AdminDashboard] Error details:', {
-        message: error.message,
-        stack: error.stack
+        message: errorMessage,
+        stack: errorStack
       });
       toast({
         title: t('common.error', 'Error'),
-        description: error.message || t('admin.failedToLoad', 'Failed to load users'),
+        description: errorMessage || t('admin.failedToLoad', 'Failed to load users'),
         variant: 'destructive',
       });
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast, t]);
+
+  useEffect(() => {
+    loadUsers();
+  }, [loadUsers]);
 
   if (loading) {
     return (
@@ -174,4 +173,3 @@ const AdminDashboard = () => {
 };
 
 export default AdminDashboard;
-

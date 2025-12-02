@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { LogIn, Mail, Lock, Chrome } from 'lucide-react';
+import { LogIn, Mail, Lock, Chrome, Sparkles, TrendingUp, Shield, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -71,24 +71,35 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/10 via-background to-accent/10 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-[#0a3d40] p-4">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="w-full max-w-md"
+        className="w-full max-w-md relative z-10"
       >
-        <Card className="glass-card p-8 space-y-6">
+        <Card className="p-8 space-y-6 bg-[#032022] border border-white/10">
           {/* Logo/Header */}
-          <div className="text-center space-y-4">
+            <div className="text-center space-y-4">
             <div className="flex justify-center">
-              <div className="w-16 h-16 rounded-full gradient-primary flex items-center justify-center">
-                <LogIn className="w-8 h-8 text-white" />
-              </div>
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: "spring", stiffness: 200, delay: 0.1 }}
+                className="w-20 h-20 flex items-center justify-center"
+              >
+                <img 
+                  src="/favicon.ico" 
+                  alt="EMINGO Logo" 
+                  className="w-full h-full object-contain"
+                />
+              </motion.div>
             </div>
             <div>
-              <h1 className="text-3xl font-display font-bold">EMINGO</h1>
-              <p className="text-muted-foreground mt-2">
+              <h1 className="text-4xl font-display font-bold text-white">
+                EMINGO
+              </h1>
+              <p className="text-white/70 mt-2 text-sm">
                 Your Personal Financial & Productivity Dashboard
               </p>
             </div>
@@ -97,9 +108,9 @@ const Login = () => {
           {/* Email/Password Form */}
           <form onSubmit={handleEmailLogin} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email" className="text-white">Email</Label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
+                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/60 w-5 h-5" />
                 <Input
                   id="email"
                   type="email"
@@ -107,15 +118,15 @@ const Login = () => {
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   required
-                  className="pl-10"
+                  className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-white/40 focus:border-white/40"
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password" className="text-white">Password</Label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/60 w-5 h-5" />
                 <Input
                   id="password"
                   type="password"
@@ -123,7 +134,7 @@ const Login = () => {
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                   required
-                  className="pl-10"
+                  className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-white/40 focus:border-white/40"
                 />
               </div>
             </div>
@@ -131,7 +142,7 @@ const Login = () => {
             <Button
               type="submit"
               disabled={loading}
-              className="w-full gradient-primary text-white h-12 text-lg"
+              className="w-full bg-[#01d47c] hover:bg-[#01d47c]/90 text-white h-12 text-lg"
               size="lg"
             >
               {loading ? (
@@ -151,24 +162,24 @@ const Login = () => {
           {/* Divider */}
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t" />
+              <span className="w-full border-t border-white/20" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-card px-2 text-muted-foreground">Or</span>
+              <span className="bg-[#032022] px-2 text-white/60">Or</span>
             </div>
           </div>
 
-          {/* Google Sign In Button */}
+          {/* Google Sign In Button - Now Enabled! */}
           <Button
             onClick={handleGoogleSignIn}
             disabled={googleLoading}
             variant="outline"
-            className="w-full h-12 text-lg"
+            className="w-full h-12 text-lg border-white/20 text-white hover:bg-white/10"
             size="lg"
           >
             {googleLoading ? (
               <div className="flex items-center gap-2">
-                <div className="w-5 h-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                 <span>Signing in...</span>
               </div>
             ) : (
@@ -180,14 +191,14 @@ const Login = () => {
           </Button>
 
           {/* Link to Signup */}
-          <p className="text-sm text-center text-muted-foreground">
+          <p className="text-sm text-center text-white/70">
             Don't have an account?{' '}
-            <Link to="/signup" className="text-primary hover:underline font-semibold">
+            <Link to="/signup" className="text-white hover:underline font-semibold">
               Sign up
             </Link>
           </p>
 
-          <p className="text-xs text-center text-muted-foreground">
+          <p className="text-xs text-center text-white/50">
             By continuing, you agree to our Terms of Service and Privacy Policy
           </p>
         </Card>

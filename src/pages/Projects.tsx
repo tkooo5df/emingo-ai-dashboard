@@ -136,16 +136,17 @@ const Projects = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-4xl font-display font-bold mb-2">{t('projects.title')}</h1>
-          <p className="text-muted-foreground">{t('projects.subtitle')}</p>
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex-1 min-w-0">
+          <h1 className="text-xl md:text-4xl font-display font-bold mb-1 md:mb-2">{t('projects.title')}</h1>
+          <p className="text-xs md:text-base text-muted-foreground">{t('projects.subtitle')}</p>
         </div>
         <Button 
           onClick={() => setShowForm(!showForm)}
-          className="gradient-primary text-white"
+          className="gradient-primary text-white h-9 px-3 text-xs md:text-sm shrink-0"
+          size="sm"
         >
           <Plus className="w-5 h-5 mr-2" />
           {t('projects.addProject')}
@@ -153,39 +154,39 @@ const Projects = () => {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="glass-card p-6">
-          <div className="flex items-center gap-4">
-            <div className="p-4 rounded-xl gradient-primary">
-              <Briefcase className="w-8 h-8 text-white" />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-6">
+        <Card className="glass-card p-3 md:p-6">
+          <div className="flex items-center gap-2 md:gap-4">
+            <div className="p-2 md:p-4 rounded-lg md:rounded-xl gradient-primary">
+              <Briefcase className="w-5 h-5 md:w-8 md:h-8 text-white" />
             </div>
-            <div>
-              <p className="text-sm text-muted-foreground">{t('projects.activeProjects')}</p>
-              <p className="text-3xl font-display font-bold">{ongoingProjects.length}</p>
-            </div>
-          </div>
-        </Card>
-
-        <Card className="glass-card p-6">
-          <div className="flex items-center gap-4">
-            <div className="p-4 rounded-xl gradient-success">
-              <DollarSign className="w-8 h-8 text-white" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">{t('projects.totalEarnings')}</p>
-              <p className="text-3xl font-display font-bold">{totalExpectedEarnings.toLocaleString()} DZD</p>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs md:text-sm text-muted-foreground">{t('projects.activeProjects')}</p>
+              <p className="text-xl md:text-3xl font-display font-bold">{ongoingProjects.length}</p>
             </div>
           </div>
         </Card>
 
-        <Card className="glass-card p-6">
-          <div className="flex items-center gap-4">
-            <div className="p-4 rounded-xl gradient-accent">
-              <Clock className="w-8 h-8 text-white" />
+        <Card className="glass-card p-3 md:p-6">
+          <div className="flex items-center gap-2 md:gap-4">
+            <div className="p-2 md:p-4 rounded-lg md:rounded-xl gradient-success">
+              <DollarSign className="w-5 h-5 md:w-8 md:h-8 text-white" />
             </div>
-            <div>
-              <p className="text-sm text-muted-foreground">{t('common.hours')}</p>
-              <p className="text-3xl font-display font-bold">
+            <div className="min-w-0 flex-1">
+              <p className="text-xs md:text-sm text-muted-foreground">{t('projects.totalEarnings')}</p>
+              <p className="text-xl md:text-3xl font-display font-bold truncate">{totalExpectedEarnings.toLocaleString()} DZD</p>
+            </div>
+          </div>
+        </Card>
+
+        <Card className="glass-card p-3 md:p-6">
+          <div className="flex items-center gap-2 md:gap-4">
+            <div className="p-2 md:p-4 rounded-lg md:rounded-xl gradient-accent">
+              <Clock className="w-5 h-5 md:w-8 md:h-8 text-white" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs md:text-sm text-muted-foreground">{t('common.hours')}</p>
+              <p className="text-xl md:text-3xl font-display font-bold">
                 {projects.reduce((sum, p) => sum + p.hoursSpent, 0)}h
               </p>
             </div>
@@ -195,9 +196,9 @@ const Projects = () => {
 
       {/* AI Prioritization */}
       {ongoingProjects.length > 0 && (
-        <Card className="glass-card p-6 border-accent/30">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-xl font-display font-semibold">{t('projects.aiAdvice')}</h3>
+        <Card className="glass-card p-4 md:p-6 border-accent/30">
+          <div className="flex items-center justify-between mb-3 md:mb-4">
+            <h3 className="text-lg md:text-xl font-display font-semibold">{t('projects.aiAdvice')}</h3>
             <Button 
               onClick={loadAIAdvice} 
               disabled={loadingAdvice}
@@ -225,10 +226,10 @@ const Projects = () => {
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <Card className="glass-card p-6">
-            <h3 className="text-xl font-display font-semibold mb-4">{t('projects.addProject')}</h3>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Card className="glass-card p-4 md:p-6">
+            <h3 className="text-lg md:text-xl font-display font-semibold mb-3 md:mb-4">{t('projects.addProject')}</h3>
+            <form onSubmit={handleSubmit} className="space-y-3 md:space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
                 <div>
                   <Label htmlFor="name">{t('projects.projectName')}</Label>
                   <Input
@@ -303,11 +304,11 @@ const Projects = () => {
                 </div>
               </div>
 
-              <div className="flex gap-3">
-                <Button type="submit" className="gradient-primary text-white">
+              <div className="flex gap-2 md:gap-3">
+                <Button type="submit" className="gradient-primary text-white h-9 md:h-10 text-xs md:text-sm flex-1">
                   {t('projects.addProject')}
                 </Button>
-                <Button type="button" variant="outline" onClick={() => setShowForm(false)}>
+                <Button type="button" variant="outline" onClick={() => setShowForm(false)} className="h-9 md:h-10 text-xs md:text-sm">
                   {t('common.cancel')}
                 </Button>
               </div>
@@ -332,7 +333,7 @@ const Projects = () => {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
               >
-                <Card className="glass-card p-6 hover:shadow-lg transition-shadow">
+                <Card className="glass-card p-4 md:p-6 hover:shadow-lg transition-shadow">
                   <div className="flex items-start justify-between mb-4">
                     <div>
                       <h4 className="text-lg font-display font-semibold">{project.name}</h4>

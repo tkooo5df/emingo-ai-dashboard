@@ -20,7 +20,6 @@ const BottomNav = () => {
 
   const navItems = [
     { path: '/', icon: LayoutDashboard, label: t('common.dashboard') },
-    { path: '/account', icon: Wallet, label: t('common.account') },
     { path: '/income', icon: TrendingUp, label: t('common.income') },
     { path: '/expenses', icon: TrendingDown, label: t('common.expenses') },
     { path: '/budget', icon: PieChart, label: t('common.budget') },
@@ -29,13 +28,13 @@ const BottomNav = () => {
     { path: '/ai-assistant', icon: Bot, label: t('common.aiAssistant') },
   ];
 
-  // Show only 5 main items on mobile: Dashboard, Account, Income, Expenses, Budget
+  // Show only 5 main items on mobile: Dashboard, Income, Expenses, Budget, Projects
   const mainItems = isMobile ? [
     navItems[0], // Dashboard
-    navItems[1], // Account
-    navItems[2], // Income
-    navItems[3], // Expenses
-    navItems[4], // Budget
+    navItems[1], // Income
+    navItems[2], // Expenses
+    navItems[3], // Budget
+    navItems[4], // Projects
   ] : [];
 
   if (!isMobile) return null;

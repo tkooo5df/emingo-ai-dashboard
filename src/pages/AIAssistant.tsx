@@ -89,7 +89,9 @@ const AIAssistant = () => {
     t('aiAssistant.quickPrompt1'),
     t('aiAssistant.quickPrompt2'),
     t('aiAssistant.quickPrompt3'),
-    t('aiAssistant.quickPrompt4')
+    t('aiAssistant.quickPrompt4'),
+    t('aiAssistant.quickPrompt5'),
+    t('aiAssistant.quickPrompt6')
   ];
 
   return (
@@ -169,23 +171,41 @@ const AIAssistant = () => {
 
         {/* Quick Prompts */}
         {messages.length === 1 && (
-          <div className="mb-4">
-            <p className="text-sm text-muted-foreground mb-3">{t('aiAssistant.quickQuestions')}</p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+          <motion.div 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-4"
+          >
+            <div className="flex items-center gap-2 mb-3">
+              <Sparkles className="w-4 h-4 text-accent animate-pulse" />
+              <p className="text-sm font-medium text-foreground">{t('aiAssistant.quickQuestions')}</p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {quickPrompts.map((prompt, index) => (
-                <button
+                <motion.button
                   key={index}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: index * 0.05 }}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
                   onClick={() => {
                     setInput(prompt);
                   }}
-                  className="text-left p-3 rounded-xl bg-muted/50 hover:bg-muted transition-colors text-sm"
+                  className="group text-left p-4 rounded-xl bg-gradient-to-br from-muted/50 to-muted/30 hover:from-muted hover:to-muted/50 transition-all duration-200 border border-border/50 hover:border-accent/30 shadow-sm hover:shadow-md"
                 >
-                  <Sparkles className="w-4 h-4 inline mr-2 text-accent" />
-                  {prompt}
-                </button>
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 rounded-lg bg-accent/10 group-hover:bg-accent/20 transition-colors">
+                      <Sparkles className="w-4 h-4 text-accent" />
+                    </div>
+                    <span className="text-sm leading-relaxed text-foreground/80 group-hover:text-foreground transition-colors">
+                      {prompt}
+                    </span>
+                  </div>
+                </motion.button>
               ))}
             </div>
-          </div>
+          </motion.div>
         )}
 
         {/* Input Form */}

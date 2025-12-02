@@ -64,24 +64,35 @@ const Signup = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/10 via-background to-accent/10 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-[#0a3d40] p-4">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="w-full max-w-md"
+        className="w-full max-w-md relative z-10"
       >
-        <Card className="glass-card p-8 space-y-6">
+        <Card className="p-8 space-y-6 bg-[#032022] border border-white/10">
           {/* Logo/Header */}
           <div className="text-center space-y-4">
             <div className="flex justify-center">
-              <div className="w-16 h-16 rounded-full gradient-primary flex items-center justify-center">
-                <UserPlus className="w-8 h-8 text-white" />
-              </div>
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: "spring", stiffness: 200, delay: 0.1 }}
+                className="w-20 h-20 flex items-center justify-center"
+              >
+                <img 
+                  src="/favicon.ico" 
+                  alt="EMINGO Logo" 
+                  className="w-full h-full object-contain"
+                />
+              </motion.div>
             </div>
             <div>
-              <h1 className="text-3xl font-display font-bold">Create Account</h1>
-              <p className="text-muted-foreground mt-2">
+              <h1 className="text-4xl font-display font-bold text-white">
+                Create Account
+              </h1>
+              <p className="text-white/70 mt-2 text-sm">
                 Sign up to start managing your finances
               </p>
             </div>
@@ -90,24 +101,24 @@ const Signup = () => {
           {/* Signup Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Name (Optional)</Label>
+              <Label htmlFor="name" className="text-white">Name (Optional)</Label>
               <div className="relative">
-                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
+                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/60 w-5 h-5" />
                 <Input
                   id="name"
                   type="text"
                   placeholder="Your name"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="pl-10"
+                  className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-white/40 focus:border-white/40"
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email" className="text-white">Email</Label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
+                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/60 w-5 h-5" />
                 <Input
                   id="email"
                   type="email"
@@ -115,15 +126,15 @@ const Signup = () => {
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   required
-                  className="pl-10"
+                  className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-white/40 focus:border-white/40"
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password" className="text-white">Password</Label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/60 w-5 h-5" />
                 <Input
                   id="password"
                   type="password"
@@ -132,15 +143,15 @@ const Signup = () => {
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                   required
                   minLength={6}
-                  className="pl-10"
+                  className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-white/40 focus:border-white/40"
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirm Password</Label>
+              <Label htmlFor="confirmPassword" className="text-white">Confirm Password</Label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/60 w-5 h-5" />
                 <Input
                   id="confirmPassword"
                   type="password"
@@ -149,7 +160,7 @@ const Signup = () => {
                   onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
                   required
                   minLength={6}
-                  className="pl-10"
+                  className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-white/40 focus:border-white/40"
                 />
               </div>
             </div>
@@ -157,7 +168,7 @@ const Signup = () => {
             <Button
               type="submit"
               disabled={loading}
-              className="w-full gradient-primary text-white h-12 text-lg"
+              className="w-full bg-[#01d47c] hover:bg-[#01d47c]/90 text-white h-12 text-lg"
               size="lg"
             >
               {loading ? (
@@ -177,17 +188,17 @@ const Signup = () => {
           {/* Divider */}
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t" />
+              <span className="w-full border-t border-white/20" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-card px-2 text-muted-foreground">Or</span>
+              <span className="bg-[#032022] px-2 text-white/60">Or</span>
             </div>
           </div>
 
           {/* Link to Login */}
-          <p className="text-sm text-center text-muted-foreground">
+          <p className="text-sm text-center text-white/70">
             Already have an account?{' '}
-            <Link to="/login" className="text-primary hover:underline font-semibold">
+            <Link to="/login" className="text-white hover:underline font-semibold">
               Sign in
             </Link>
           </p>

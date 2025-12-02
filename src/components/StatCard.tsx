@@ -25,9 +25,9 @@ const StatCard = ({ icon: Icon, label, value, trend, gradient = 'primary', child
       whileHover={{ scale: 1.02, y: -4 }}
       className="glass-card rounded-xl md:rounded-2xl p-4 md:p-6 transition-all duration-300 hover:shadow-xl hover:shadow-primary/10 active:scale-95 touch-manipulation"
     >
-      <div className="flex items-start justify-between mb-3 md:mb-4">
-        <div className={`p-2 md:p-3 rounded-lg md:rounded-xl ${gradientClass}`}>
-          <Icon className="w-5 h-5 md:w-6 md:h-6 text-white" />
+      <div className="flex items-start justify-between mb-2 md:mb-4">
+        <div className={`p-1.5 md:p-3 rounded-lg md:rounded-xl ${gradientClass}`}>
+          <Icon className="w-4 h-4 md:w-6 md:h-6 text-white" />
         </div>
         {trend && (
           <div className={`px-2 md:px-3 py-1 rounded-full text-[10px] md:text-xs font-semibold ${
@@ -39,8 +39,8 @@ const StatCard = ({ icon: Icon, label, value, trend, gradient = 'primary', child
       </div>
       
       <div>
-        <p className="text-xs md:text-sm text-muted-foreground mb-1">{label}</p>
-        <p className="text-xl md:text-3xl font-display font-bold text-foreground break-words">{value}</p>
+        <p className="text-[10px] md:text-sm text-muted-foreground mb-1">{label}</p>
+        <p className="text-lg md:text-3xl font-display font-bold text-foreground break-words">{value}</p>
       </div>
       
       {children && (

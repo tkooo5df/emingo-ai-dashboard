@@ -1,6 +1,8 @@
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import InstallPWA from "@/components/InstallPWA";
+import AddToHomeScreen from "@/components/AddToHomeScreen";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Sidebar from "./components/Sidebar";
@@ -12,7 +14,6 @@ import Budget from "./pages/Budget";
 import Projects from "./pages/Projects";
 import Goals from "./pages/Goals";
 import AIAssistant from "./pages/AIAssistant";
-import Account from "./pages/Account";
 import Debts from "./pages/Debts";
 import Settings from "./pages/Settings";
 import AdminDashboard from "./pages/AdminDashboard";
@@ -35,22 +36,15 @@ const AppContent = () => {
 
   // Listen to language changes and force re-render
   useEffect(() => {
-    console.log('🌐 [App] Setting up language change listener...');
-    
+
     const handleLanguageChange = (lng: string) => {
-      console.log('🌐 [App] Language change detected in App component:', {
-        newLanguage: lng,
-        timestamp: new Date().toISOString()
-      });
       forceUpdate(prev => prev + 1);
-      console.log('🌐 [App] Force update triggered for re-render');
     };
     
     i18n.on('languageChanged', handleLanguageChange);
-    console.log('🌐 [App] Language change listener registered');
-    
+
     return () => {
-      console.log('🌐 [App] Cleaning up language change listener');
+
       i18n.off('languageChanged', handleLanguageChange);
     };
   }, [i18n]);
@@ -81,13 +75,12 @@ const AppContent = () => {
               <main className={`
                 flex-1 min-h-screen
                 ${isMobile 
-                  ? 'pt-14 pb-20 px-4' 
+                  ? 'pt-16 pb-20 px-3' 
                   : 'ml-64 p-8'
                 }
               `}>
                 <Routes>
                   <Route path="/" element={<Dashboard />} />
-                  <Route path="/account" element={<Account />} />
                   <Route path="/income" element={<Income />} />
                   <Route path="/expenses" element={<Expenses />} />
                   <Route path="/debts" element={<Debts />} />
@@ -123,6 +116,8 @@ const App = () => {
       <TooltipProvider>
         <Toaster />
         <Sonner />
+        <InstallPWA />
+        <AddToHomeScreen />
         <BrowserRouter
           future={{
             v7_startTransition: true,

@@ -185,29 +185,16 @@ const Settings = () => {
   
   // Listen to language changes and force re-render
   useEffect(() => {
-    console.log('🌐 [Settings] Setting up language change listener, current language:', i18n.language);
-    
-    const handleLanguageChange = (lng: string) => {
-      console.log('🌐 [Settings] Language change detected in Settings component:', {
-        from: currentLanguage,
-        to: lng,
-        i18nLanguage: i18n.language,
-        timestamp: new Date().toISOString()
-      });
-      setCurrentLanguage(lng);
+      const handleLanguageChange = (lng: string) => {
+        setCurrentLanguage(lng);
       setLanguageKey(prev => {
         const newKey = prev + 1;
-        console.log('🌐 [Settings] Updating language key from', prev, 'to', newKey);
         return newKey;
       });
-      console.log('🌐 [Settings] Component will re-render with new language');
     };
     
     i18n.on('languageChanged', handleLanguageChange);
-    console.log('🌐 [Settings] Language change listener registered');
-    
     return () => {
-      console.log('🌐 [Settings] Cleaning up language change listener');
       i18n.off('languageChanged', handleLanguageChange);
     };
   }, [i18n]);
@@ -215,10 +202,6 @@ const Settings = () => {
   // Update currentLanguage when i18n.language changes (fallback)
   useEffect(() => {
     if (i18n.language !== currentLanguage) {
-      console.log('🌐 [Settings] i18n.language changed, updating currentLanguage:', {
-        from: currentLanguage,
-        to: i18n.language
-      });
       setCurrentLanguage(i18n.language);
       setLanguageKey(prev => prev + 1);
     }
@@ -251,16 +234,8 @@ const Settings = () => {
 
   const loadProfile = async () => {
     try {
-      console.log('📥 [SETTINGS] Loading profile...');
       const data = await api.getProfile();
-      console.log('✅ [SETTINGS] Profile loaded:', data);
       setProfile({
-        name: data.name || '',
-        age: data.age ? String(data.age) : '',
-        current_work: data.current_work || '',
-        description: data.description || ''
-      });
-      console.log('✅ [SETTINGS] Profile state updated:', {
         name: data.name || '',
         age: data.age ? String(data.age) : '',
         current_work: data.current_work || '',
@@ -272,24 +247,14 @@ const Settings = () => {
   };
 
   const saveProfile = async () => {
-    try {
-      setSaving(true);
-      console.log('💾 [SETTINGS] Saving profile:', {
-        name: profile.name || null,
-        age: profile.age ? parseInt(profile.age) : null,
-        current_work: profile.current_work || null,
-        description: profile.description || null,
-      });
-      
-      await api.saveProfile({
-        name: profile.name || null,
-        age: profile.age ? parseInt(profile.age) : null,
-        current_work: profile.current_work || null,
-        description: profile.description || null,
-      });
-      
-      console.log('✅ [SETTINGS] Profile saved successfully, reloading...');
-      
+      try {
+        setSaving(true);
+        await api.updateProfile({
+          name: profile.name || null,
+          age: profile.age ? parseInt(profile.age) : null,
+          current_work: profile.current_work || null,
+          description: profile.description || null,
+        });
       // Reload profile from database to ensure UI is in sync
       await loadProfile();
       
@@ -349,40 +314,20 @@ const Settings = () => {
       });
       
       // Update i18n language if it's different (database has priority)
-      console.log('🌐 [Settings] Loading settings from database...');
-      if (data.language) {
-        console.log('🌐 [Settings] Language found in database:', {
-          dbLanguage: data.language,
-          currentI18n: i18n.language,
-          currentLocalStorage: localStorage.getItem('i18nextLng'),
-          needsUpdate: data.language !== i18n.language
-        });
-        
-        if (data.language !== i18n.language) {
-          console.log('🔄 [Settings] Updating i18n language from', i18n.language, 'to', data.language);
-          await i18n.changeLanguage(data.language);
-          localStorage.setItem('i18nextLng', data.language);
-          // Update document direction
-          document.documentElement.dir = data.language === 'ar' ? 'rtl' : 'ltr';
-          document.documentElement.lang = data.language;
-          console.log('✅ [Settings] Language updated successfully:', {
-            i18n: i18n.language,
-            localStorage: localStorage.getItem('i18nextLng'),
-            documentDir: document.documentElement.dir
-          });
-        } else {
-          console.log('✅ [Settings] Language already matches, no update needed');
-        }
-      } else {
+      if (data.language && data.language !== i18n.language) {
+        await i18n.changeLanguage(data.language);
+        localStorage.setItem('i18nextLng', data.language);
+        // Update document direction
+        document.documentElement.dir = data.language === 'ar' ? 'rtl' : 'ltr';
+        document.documentElement.lang = data.language;
+      } else if (!data.language) {
         // If no language in database, save current i18n language to database
         const currentLang = i18n.language || 'en';
-        console.log('⚠️ [Settings] No language in database, saving current language:', currentLang);
         try {
           await api.updateSettings({
             ...data,
             language: currentLang
           });
-          console.log('✅ [Settings] Default language saved to database:', currentLang);
         } catch (error) {
           console.error('❌ [Settings] Error saving default language:', error);
         }
@@ -654,50 +599,26 @@ const Settings = () => {
                 value={settings.language || i18n.language}
                 onChange={async (e) => {
                   const newLanguage = e.target.value;
-                  const previousLanguage = settings.language || i18n.language;
-                  
-                  console.log('🌐 [Settings] Language change initiated:', {
-                    from: previousLanguage,
-                    to: newLanguage,
-                    timestamp: new Date().toISOString()
-                  });
+                    const previousLanguage = settings.language || i18n.language;
                   
                   // Update state first to trigger immediate UI update
                   setSettings({ ...settings, language: newLanguage });
-                  console.log('🌐 [Settings] State updated with new language');
-                  
                   // Change language immediately (triggers re-render via i18n event)
-                  console.log('🌐 [Settings] Calling i18n.changeLanguage...');
-                  await i18n.changeLanguage(newLanguage);
-                  localStorage.setItem('i18nextLng', newLanguage);
-                  console.log('🌐 [Settings] i18n and localStorage updated:', {
-                    i18n: i18n.language,
-                    localStorage: localStorage.getItem('i18nextLng')
-                  });
+                    await i18n.changeLanguage(newLanguage);
+                    localStorage.setItem('i18nextLng', newLanguage);
                   
                   // Update document direction for RTL
                   document.documentElement.dir = newLanguage === 'ar' ? 'rtl' : 'ltr';
                   document.documentElement.lang = newLanguage;
-                  console.log('🌐 [Settings] Document direction updated:', {
-                    dir: document.documentElement.dir,
-                    lang: document.documentElement.lang
-                  });
-                  
                   // Force re-render by updating key
                   setLanguageKey(prev => prev + 1);
                   
                   // Save to database FIRST (blocking) to ensure it's saved
                   try {
-                    console.log('💾 [Settings] Saving language to database...', {
-                      language: newLanguage,
-                      settings: { ...settings, language: newLanguage }
-                    });
                     await api.updateSettings({
                       ...settings,
                       language: newLanguage
                     });
-                    console.log('✅ [Settings] Language saved to database successfully:', newLanguage);
-                    
                     // Use setTimeout to ensure toast uses new language
                     setTimeout(() => {
                       toast({
@@ -713,14 +634,11 @@ const Settings = () => {
                     });
                     
                     // Revert language change if save fails
-                    console.log('🔄 [Settings] Reverting language change due to save failure...');
                     await i18n.changeLanguage(previousLanguage);
                     localStorage.setItem('i18nextLng', previousLanguage);
                     setSettings({ ...settings, language: previousLanguage });
                     document.documentElement.dir = previousLanguage === 'ar' ? 'rtl' : 'ltr';
                     document.documentElement.lang = previousLanguage;
-                    console.log('✅ [Settings] Language reverted to:', previousLanguage);
-                    
                     setTimeout(() => {
                       toast({
                         title: t('errors.errorSaving'),

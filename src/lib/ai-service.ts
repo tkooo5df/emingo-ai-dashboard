@@ -11,16 +11,10 @@ interface AIMessage {
 
 export const callAI = async (prompt: string, systemContext?: string): Promise<string> => {
   try {
-    const messages: AIMessage[] = [
-      {
-        role: 'system',
-        content: systemContext || 'You are a helpful AI financial and productivity assistant for EMINGO. Provide clear, actionable advice.'
-      },
-      {
-        role: 'user',
-        content: prompt
-      }
-    ];
+    // Combine system context and user prompt
+    const fullPrompt = systemContext 
+      ? `${systemContext}\n\n${prompt}`
+      : prompt;
 
     const response = await fetch(`${API_BASE_URL}/ai/chat`, {
       method: 'POST',
@@ -28,9 +22,7 @@ export const callAI = async (prompt: string, systemContext?: string): Promise<st
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        messages,
-        temperature: 0.7,
-        max_tokens: 1000
+        text: fullPrompt
       })
     });
 
@@ -41,7 +33,8 @@ export const callAI = async (prompt: string, systemContext?: string): Promise<st
     }
 
     const data = await response.json();
-    return data.choices[0]?.message?.content || 'No response from AI';
+    // The new API returns the response directly in the response body
+    return data.response || data.text || data.message || JSON.stringify(data) || 'No response from AI';
   } catch (error: any) {
     console.error('AI Service Error:', error);
     return `Failed to get AI response: ${error.message || 'Unknown error'}`;

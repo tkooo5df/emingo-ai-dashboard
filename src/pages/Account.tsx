@@ -122,11 +122,9 @@ const Account = () => {
   };
 
   const handleSubmit = async (type: 'income' | 'expense') => {
-    console.log(`🟡 [ACCOUNT PAGE] handleSubmit called with type: ${type}`);
-    console.log('📝 [ACCOUNT PAGE] Form data:', formData);
-    
+
     if (!formData.amount || (!formData.name && !formData.source)) {
-      console.log('❌ [ACCOUNT PAGE] Validation failed: Missing required fields');
+
       toast({
         title: t('common.error'),
         description: t('account.required'),
@@ -140,23 +138,13 @@ const Account = () => {
       const sourceOrName = formData.source || formData.name;
       const description = formData.note || formData.description || '';
 
-      console.log('📊 [ACCOUNT PAGE] Parsed values:', {
-        amount,
-        sourceOrName,
-        description,
-        category: formData.category,
-        date: formData.date,
-        account_id: formData.account_id,
-        account_type: formData.account_type
-      });
-
       // Get account type from selected account
       let accountType = formData.account_type;
       if (formData.account_id && !accountType) {
         const selectedAccount = accounts.find(a => a.id === formData.account_id);
         if (selectedAccount) {
           accountType = selectedAccount.type;
-          console.log('💳 [ACCOUNT PAGE] Found account type from selected account:', accountType);
+
         }
       }
 
@@ -170,17 +158,13 @@ const Account = () => {
         note: formData.note || null
       };
 
-      console.log('💳 [ACCOUNT PAGE] Adding account transaction:', transactionData);
       // Add to account_transactions (this will also sync to income/expenses via API automatically)
       // No need to call addIncome/addExpense separately - API handles both tables
       await api.addAccountTransaction(transactionData);
-      console.log('✅ [ACCOUNT PAGE] Account transaction added successfully (synced to income/expenses tables)');
 
-      console.log('🔄 [ACCOUNT PAGE] Reloading balance...');
       await loadBalance();
       await loadDebts();
-      console.log('✅ [ACCOUNT PAGE] Balance reloaded');
-      
+
       if (type === 'expense') {
         setShowSubtractDialog(false);
       } else {

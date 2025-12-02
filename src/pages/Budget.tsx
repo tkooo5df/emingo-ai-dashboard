@@ -60,42 +60,44 @@ const Budget = () => {
   } : null;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-4xl font-display font-bold mb-2">{t('budget.title')}</h1>
-          <p className="text-muted-foreground">{t('budget.subtitle')}</p>
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex-1 min-w-0">
+          <h1 className="text-xl md:text-4xl font-display font-bold mb-1 md:mb-2">{t('budget.title')}</h1>
+          <p className="text-xs md:text-base text-muted-foreground">{t('budget.subtitle')}</p>
         </div>
         <Button 
           onClick={generatePlan}
           disabled={loading}
-          className="gradient-accent text-white"
+          className="gradient-accent text-white h-9 px-3 text-xs md:text-sm shrink-0"
+          size="sm"
         >
           {loading ? (
             <>
-              <RefreshCw className="w-5 h-5 mr-2 animate-spin" />
-              {t('budget.generating')}
+              <RefreshCw className="w-4 h-4 md:w-5 md:h-5 mr-1 md:mr-2 animate-spin" />
+              <span className="hidden sm:inline">{t('budget.generating')}</span>
             </>
           ) : (
             <>
-              <Sparkles className="w-5 h-5 mr-2" />
-              {budget ? t('budget.regeneratePlan') : t('budget.generatePlan')}
+              <Sparkles className="w-4 h-4 md:w-5 md:h-5 mr-1 md:mr-2" />
+              <span className="hidden sm:inline">{budget ? t('budget.regeneratePlan') : t('budget.generatePlan')}</span>
+              <span className="sm:hidden">{budget ? t('budget.regenerate', 'Regenerate') : t('budget.generate', 'Generate')}</span>
             </>
           )}
         </Button>
       </div>
 
       {!budget ? (
-        <Card className="glass-card p-12 text-center">
+        <Card className="glass-card p-6 md:p-12 text-center">
           <div className="max-w-md mx-auto">
-            <PieChart className="w-16 h-16 mx-auto mb-4 text-primary" />
-            <h3 className="text-2xl font-display font-semibold mb-2">{t('budget.noBudgetYet')}</h3>
-            <p className="text-muted-foreground mb-6">
+            <PieChart className="w-12 h-12 md:w-16 md:h-16 mx-auto mb-3 md:mb-4 text-primary" />
+            <h3 className="text-lg md:text-2xl font-display font-semibold mb-2">{t('budget.noBudgetYet')}</h3>
+            <p className="text-sm md:text-base text-muted-foreground mb-4 md:mb-6">
               {t('budget.noBudgetDesc')}
             </p>
-            <Button onClick={generatePlan} disabled={loading} className="gradient-primary text-white">
-              <Sparkles className="w-5 h-5 mr-2" />
+            <Button onClick={generatePlan} disabled={loading} className="gradient-primary text-white h-9 md:h-10 text-xs md:text-sm">
+              <Sparkles className="w-4 h-4 md:w-5 md:h-5 mr-2" />
               {t('budget.generatePlan')}
             </Button>
           </div>
@@ -103,15 +105,15 @@ const Budget = () => {
       ) : (
         <>
           {/* AI Recommendation */}
-          <Card className="glass-card p-6 gradient-primary relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+          <Card className="glass-card p-4 md:p-6 gradient-primary relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-48 md:w-64 h-48 md:h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
             <div className="relative z-10">
-              <div className="flex items-center gap-3 mb-4">
-                <Sparkles className="w-6 h-6 text-white" />
-                <h3 className="text-xl font-display font-semibold text-white">{t('budget.aiRecommendation')}</h3>
+              <div className="flex items-center gap-2 md:gap-3 mb-3 md:mb-4">
+                <Sparkles className="w-5 h-5 md:w-6 md:h-6 text-white" />
+                <h3 className="text-base md:text-xl font-display font-semibold text-white">{t('budget.aiRecommendation')}</h3>
               </div>
-              <p className="text-white/90 leading-relaxed">{budget.aiRecommendation}</p>
-              <p className="text-white/60 text-sm mt-4">
+              <p className="text-sm md:text-base text-white/90 leading-relaxed">{budget.aiRecommendation}</p>
+              <p className="text-white/60 text-xs md:text-sm mt-3 md:mt-4">
                 {t('budget.generatedOn')} {new Date(budget.generatedAt).toLocaleDateString(i18n.language === 'ar' ? 'ar-SA' : i18n.language === 'fr' ? 'fr-FR' : 'en-US', { 
                   month: 'long', 
                   day: 'numeric', 
@@ -122,10 +124,10 @@ const Budget = () => {
           </Card>
 
           {/* Budget Breakdown */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
             {/* Chart */}
-            <Card className="glass-card p-6">
-              <h3 className="text-xl font-display font-semibold mb-4">{t('budget.budgetAllocation')}</h3>
+            <Card className="glass-card p-4 md:p-6">
+              <h3 className="text-lg md:text-xl font-display font-semibold mb-3 md:mb-4">{t('budget.budgetAllocation')}</h3>
               <ResponsiveContainer width="100%" height={300}>
                 <RechartsPie>
                   <Pie
@@ -172,7 +174,7 @@ const Budget = () => {
                 <div className="flex justify-between items-center">
                   <div>
                     <p className="text-sm text-muted-foreground">{t('budget.necessities')}</p>
-                    <p className="text-2xl font-display font-bold text-primary">{budget.necessities}%</p>
+                    <p className="text-xl md:text-2xl font-display font-bold text-primary">{budget.necessities}%</p>
                   </div>
                   {budgetAmounts && (
                     <p className="text-xl font-semibold">{budgetAmounts.necessities} DZD</p>
@@ -184,7 +186,7 @@ const Budget = () => {
                 <div className="flex justify-between items-center">
                   <div>
                     <p className="text-sm text-muted-foreground">{t('budget.wants')}</p>
-                    <p className="text-2xl font-display font-bold text-secondary">{budget.wants}%</p>
+                    <p className="text-xl md:text-2xl font-display font-bold text-secondary">{budget.wants}%</p>
                   </div>
                   {budgetAmounts && (
                     <p className="text-xl font-semibold">{budgetAmounts.wants} DZD</p>
@@ -196,7 +198,7 @@ const Budget = () => {
                 <div className="flex justify-between items-center">
                   <div>
                     <p className="text-sm text-muted-foreground">{t('budget.investments')}</p>
-                    <p className="text-2xl font-display font-bold text-accent">{budget.investments}%</p>
+                    <p className="text-xl md:text-2xl font-display font-bold text-accent">{budget.investments}%</p>
                   </div>
                   {budgetAmounts && (
                     <p className="text-xl font-semibold">{budgetAmounts.investments} DZD</p>

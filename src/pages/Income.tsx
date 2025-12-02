@@ -106,32 +106,21 @@ const Income = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    console.log('🟢 [INCOME PAGE] Form submitted');
-    console.log('📝 [INCOME PAGE] Form data:', {
-      amount: formData.amount,
-      source: formData.source,
-      category: formData.category,
-      date: formData.date,
-      description: formData.description,
-      account_id: formData.account_id,
-      account_type: formData.account_type
-    });
-    
+
     // Get account type from selected account
     let accountType = formData.account_type;
     if (formData.account_id && !accountType) {
       const selectedAccount = accounts.find(a => a.id === formData.account_id);
       if (selectedAccount) {
         accountType = selectedAccount.type;
-        console.log('💳 [INCOME PAGE] Found account type from selected account:', accountType);
+
       }
     }
 
     try {
       if (editingIncome) {
         // Update existing income
-        console.log('✏️ [INCOME PAGE] Updating income entry:', editingIncome.id);
+
         await api.updateIncome(editingIncome.id, {
           amount: parseFloat(formData.amount),
           source: formData.source,
@@ -141,7 +130,7 @@ const Income = () => {
           account_id: formData.account_id || undefined,
           account_type: accountType || undefined
         });
-        console.log('✅ [INCOME PAGE] Income updated successfully');
+
         toast({
           title: t('income.incomeUpdated'),
           description: t('income.incomeUpdatedDesc', { amount: parseFloat(formData.amount), source: formData.source }),
@@ -159,10 +148,7 @@ const Income = () => {
           account_type: accountType || undefined
         };
 
-        console.log('📦 [INCOME PAGE] Created income entry object:', newEntry);
-        console.log('🚀 [INCOME PAGE] Calling addIncome()...');
         await addIncome(newEntry);
-        console.log('✅ [INCOME PAGE] addIncome() completed successfully');
         
         // Also add to account_transactions for synchronization
         if (formData.account_id && accountType) {
@@ -176,21 +162,17 @@ const Income = () => {
             account_type: accountType,
             note: newEntry.description || null
           };
-          console.log('💳 [INCOME PAGE] Adding account transaction:', transactionData);
+
           await api.addAccountTransaction(transactionData);
-          console.log('✅ [INCOME PAGE] Account transaction added');
-        } else {
-          console.log('⚠️ [INCOME PAGE] Skipping account_transactions (no account_id or account_type)');
         }
         toast({
           title: t('income.incomeAdded'),
           description: t('income.incomeAddedDesc', { amount: newEntry.amount, source: newEntry.source }),
         });
       }
-      
-      console.log('🔄 [INCOME PAGE] Reloading income list...');
+
       await loadIncome();
-      console.log('✅ [INCOME PAGE] Income list reloaded');
+
       setShowForm(false);
       setEditingIncome(null);
       setFormData({
@@ -223,12 +205,12 @@ const Income = () => {
     .reduce((sum, entry) => sum + entry.amount, 0);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-4xl font-display font-bold mb-2">{t('income.title')}</h1>
-          <p className="text-muted-foreground">{t('income.subtitle')}</p>
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex-1 min-w-0">
+          <h1 className="text-xl md:text-4xl font-display font-bold mb-1 md:mb-2">{t('income.title')}</h1>
+          <p className="text-xs md:text-base text-muted-foreground">{t('income.subtitle')}</p>
         </div>
         <Button 
           onClick={() => {
@@ -244,35 +226,37 @@ const Income = () => {
               account_type: ''
             });
           }}
-          className="gradient-success text-white"
+          className="gradient-success text-white h-9 px-3 text-xs md:text-sm shrink-0"
+          size="sm"
         >
-          <Plus className="w-5 h-5 mr-2" />
-          {t('income.addIncome')}
+          <Plus className="w-4 h-4 md:w-5 md:h-5 mr-1 md:mr-2" />
+          <span className="hidden sm:inline">{t('income.addIncome')}</span>
+          <span className="sm:hidden">+</span>
         </Button>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card className="glass-card p-6">
-          <div className="flex items-center gap-4">
-            <div className="p-4 rounded-xl gradient-success">
-              <TrendingUp className="w-8 h-8 text-white" />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-6">
+        <Card className="glass-card p-3 md:p-6">
+          <div className="flex items-center gap-2 md:gap-4">
+            <div className="p-2 md:p-4 rounded-lg md:rounded-xl gradient-success">
+              <TrendingUp className="w-4 h-4 md:w-8 md:h-8 text-white" />
             </div>
-            <div>
-              <p className="text-sm text-muted-foreground">{t('income.monthlyIncome')}</p>
-              <p className="text-3xl font-display font-bold">{monthlyIncome.toLocaleString()} DZD</p>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs text-muted-foreground">{t('income.monthlyIncome')}</p>
+              <p className="text-lg md:text-3xl font-display font-bold truncate">{monthlyIncome.toLocaleString()} DZD</p>
             </div>
           </div>
         </Card>
 
-        <Card className="glass-card p-6">
-          <div className="flex items-center gap-4">
-            <div className="p-4 rounded-xl gradient-primary">
-              <DollarSign className="w-8 h-8 text-white" />
+        <Card className="glass-card p-3 md:p-6">
+          <div className="flex items-center gap-2 md:gap-4">
+            <div className="p-2 md:p-4 rounded-lg md:rounded-xl gradient-primary">
+              <DollarSign className="w-4 h-4 md:w-8 md:h-8 text-white" />
             </div>
-            <div>
-              <p className="text-sm text-muted-foreground">{t('income.totalIncome')}</p>
-              <p className="text-3xl font-display font-bold">{totalIncome.toLocaleString()} DZD</p>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs text-muted-foreground">{t('income.totalIncome')}</p>
+              <p className="text-lg md:text-3xl font-display font-bold truncate">{totalIncome.toLocaleString()} DZD</p>
             </div>
           </div>
         </Card>
@@ -284,12 +268,12 @@ const Income = () => {
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <Card className="glass-card p-6">
-            <h3 className="text-xl font-display font-semibold mb-4">
+          <Card className="glass-card p-4 md:p-6">
+            <h3 className="text-lg md:text-xl font-display font-semibold mb-3 md:mb-4">
               {editingIncome ? t('common.edit') : t('income.addNew')}
             </h3>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <form onSubmit={handleSubmit} className="space-y-3 md:space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
                 <div>
                   <Label htmlFor="amount">{t('income.amount')}</Label>
                   <Input
@@ -431,11 +415,11 @@ const Income = () => {
       )}
 
       {/* Income List */}
-      <Card className="glass-card p-6">
+      <Card className="glass-card p-4 md:p-6">
         <h3 className="text-xl font-display font-semibold mb-4">{t('income.recentIncome')}</h3>
         {income.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">
-            <TrendingUp className="w-12 h-12 mx-auto mb-4 opacity-50" />
+            <TrendingUp className="w-8 h-8 md:w-12 md:h-12 mx-auto mb-4 opacity-50" />
             <p>{t('income.noIncome')}</p>
           </div>
         ) : (
@@ -480,10 +464,7 @@ const Income = () => {
                     </Button>
                     <Button
                       onClick={async () => {
-                        console.log('🗑️  [INCOME] Delete button clicked');
-                        console.log('🆔 [INCOME] Entry ID:', entry.id);
-                        console.log('📦 [INCOME] Full entry:', entry);
-                        
+
                         if (!entry.id) {
                           console.error('❌ [INCOME] Entry ID is missing!');
                           toast({
@@ -496,9 +477,9 @@ const Income = () => {
                         
                         if (confirm(t('income.confirmDelete'))) {
                           try {
-                            console.log('🚀 [INCOME] Calling api.deleteIncome with ID:', entry.id);
+
                             await api.deleteIncome(entry.id);
-                            console.log('✅ [INCOME] Delete successful, reloading...');
+
                             await loadIncome();
                             toast({
                               title: t('success.deleted'),

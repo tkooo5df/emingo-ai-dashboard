@@ -1,0 +1,56 @@
+{
+  "name": "EMINGO - Personal Finance & Productivity Dashboard",
+  "short_name": "EMINGO",
+  "description": "إدارة مالية شخصية ذكية للطلاب والعاملين المستقلين. تتبع الدخل والمصروفات، إدارة الميزانية، الأهداف والمشاريع مع مساعد ذكي بالذكاء الاصطناعي.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#032022",
+  "theme_color": "#01d47c",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "any",
+      "type": "image/x-icon",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/favicon.ico",
+      "sizes": "192x192",
+      "type": "image/x-icon",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/favicon.ico",
+      "sizes": "512x512",
+      "type": "image/x-icon",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["finance", "productivity", "business"],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "short_name": "Dashboard",
+      "description": "View your financial dashboard",
+      "url": "/",
+      "icons": [{ "src": "/favicon.ico", "sizes": "192x192" }]
+    },
+    {
+      "name": "Income",
+      "short_name": "Income",
+      "description": "Add or view income",
+      "url": "/income",
+      "icons": [{ "src": "/favicon.ico", "sizes": "192x192" }]
+    },
+    {
+      "name": "Expenses",
+      "short_name": "Expenses",
+      "description": "Track expenses",
+      "url": "/expenses",
+      "icons": [{ "src": "/favicon.ico", "sizes": "192x192" }]
+    }
+  ]
+}
+

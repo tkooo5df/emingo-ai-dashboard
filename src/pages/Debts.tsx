@@ -167,12 +167,12 @@ const Debts = () => {
   const pendingReceived = debts.filter(d => d.type === 'received' && d.status === 'pending').reduce((sum, d) => sum + d.amount, 0);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-4xl font-display font-bold mb-2">{t('debts.title')}</h1>
-          <p className="text-muted-foreground">{t('debts.subtitle')}</p>
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex-1 min-w-0">
+          <h1 className="text-xl md:text-4xl font-display font-bold mb-1 md:mb-2">{t('debts.title')}</h1>
+          <p className="text-xs md:text-base text-muted-foreground">{t('debts.subtitle')}</p>
         </div>
         <Button 
           onClick={() => {
@@ -187,59 +187,61 @@ const Debts = () => {
               status: 'pending'
             });
           }}
-          className="gradient-primary text-white"
+          className="gradient-primary text-white h-9 px-3 text-xs md:text-sm shrink-0"
+          size="sm"
         >
-          <Plus className="w-5 h-5 mr-2" />
-          {t('debts.addDebt')}
+          <Plus className="w-4 h-4 md:w-5 md:h-5 mr-1 md:mr-2" />
+          <span className="hidden sm:inline">{t('debts.addDebt')}</span>
+          <span className="sm:hidden">+</span>
         </Button>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="glass-card p-6">
-          <div className="flex items-center gap-4">
-            <div className="p-4 rounded-xl gradient-warning">
-              <TrendingUp className="w-8 h-8 text-white" />
+      <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
+        <Card className="glass-card p-3 md:p-6">
+          <div className="flex items-center gap-2 md:gap-4">
+            <div className="p-2 md:p-4 rounded-lg md:rounded-xl gradient-warning">
+              <TrendingUp className="w-4 h-4 md:w-8 md:h-8 text-white" />
             </div>
-            <div>
-              <p className="text-sm text-muted-foreground">{t('debts.totalGiven')}</p>
-              <p className="text-3xl font-display font-bold">{totalGiven.toLocaleString()} DZD</p>
-            </div>
-          </div>
-        </Card>
-
-        <Card className="glass-card p-6">
-          <div className="flex items-center gap-4">
-            <div className="p-4 rounded-xl gradient-success">
-              <TrendingDown className="w-8 h-8 text-white" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">{t('debts.totalReceived')}</p>
-              <p className="text-3xl font-display font-bold">{totalReceived.toLocaleString()} DZD</p>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs text-muted-foreground">{t('debts.totalGiven')}</p>
+              <p className="text-lg md:text-3xl font-display font-bold truncate">{totalGiven.toLocaleString()} DZD</p>
             </div>
           </div>
         </Card>
 
-        <Card className="glass-card p-6">
-          <div className="flex items-center gap-4">
-            <div className="p-4 rounded-xl bg-warning/20">
-              <Clock className="w-8 h-8 text-warning" />
+        <Card className="glass-card p-3 md:p-6">
+          <div className="flex items-center gap-2 md:gap-4">
+            <div className="p-2 md:p-4 rounded-lg md:rounded-xl gradient-success">
+              <TrendingDown className="w-4 h-4 md:w-8 md:h-8 text-white" />
             </div>
-            <div>
-              <p className="text-sm text-muted-foreground">{t('debts.pendingGiven')}</p>
-              <p className="text-3xl font-display font-bold">{pendingGiven.toLocaleString()} DZD</p>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs text-muted-foreground">{t('debts.totalReceived')}</p>
+              <p className="text-lg md:text-3xl font-display font-bold truncate">{totalReceived.toLocaleString()} DZD</p>
             </div>
           </div>
         </Card>
 
-        <Card className="glass-card p-6">
-          <div className="flex items-center gap-4">
-            <div className="p-4 rounded-xl bg-success/20">
-              <Clock className="w-8 h-8 text-success" />
+        <Card className="glass-card p-3 md:p-6">
+          <div className="flex items-center gap-2 md:gap-4">
+            <div className="p-2 md:p-4 rounded-lg md:rounded-xl bg-warning/20">
+              <Clock className="w-4 h-4 md:w-8 md:h-8 text-warning" />
             </div>
-            <div>
-              <p className="text-sm text-muted-foreground">{t('debts.pendingReceived')}</p>
-              <p className="text-3xl font-display font-bold">{pendingReceived.toLocaleString()} DZD</p>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs text-muted-foreground">{t('debts.pendingGiven')}</p>
+              <p className="text-lg md:text-3xl font-display font-bold truncate">{pendingGiven.toLocaleString()} DZD</p>
+            </div>
+          </div>
+        </Card>
+
+        <Card className="glass-card p-3 md:p-6">
+          <div className="flex items-center gap-2 md:gap-4">
+            <div className="p-2 md:p-4 rounded-lg md:rounded-xl bg-success/20">
+              <Clock className="w-4 h-4 md:w-8 md:h-8 text-success" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs text-muted-foreground">{t('debts.pendingReceived')}</p>
+              <p className="text-lg md:text-3xl font-display font-bold truncate">{pendingReceived.toLocaleString()} DZD</p>
             </div>
           </div>
         </Card>
@@ -251,12 +253,12 @@ const Debts = () => {
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <Card className="glass-card p-6">
-            <h3 className="text-xl font-display font-semibold mb-4">
+          <Card className="glass-card p-4 md:p-6">
+            <h3 className="text-lg md:text-xl font-display font-semibold mb-3 md:mb-4">
               {editingDebt ? t('common.edit') : t('debts.addDebt')}
             </h3>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <form onSubmit={handleSubmit} className="space-y-3 md:space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
                 <div>
                   <Label htmlFor="type">{t('debts.type')}</Label>
                   <Select
@@ -335,14 +337,14 @@ const Debts = () => {
                 </div>
               </div>
 
-              <div className="flex gap-3">
-                <Button type="submit" className="gradient-primary text-white">
+              <div className="flex gap-2 md:gap-3">
+                <Button type="submit" className="gradient-primary text-white h-9 md:h-10 text-xs md:text-sm flex-1">
                   {editingDebt ? t('common.save') : t('debts.addDebt')}
                 </Button>
                 <Button type="button" variant="outline" onClick={() => {
                   setShowForm(false);
                   setEditingDebt(null);
-                }}>
+                }} className="h-9 md:h-10 text-xs md:text-sm">
                   {t('common.cancel')}
                 </Button>
               </div>
@@ -352,8 +354,8 @@ const Debts = () => {
       )}
 
       {/* Debts List */}
-      <Card className="glass-card p-6">
-        <h3 className="text-xl font-display font-semibold mb-4">{t('debts.title')}</h3>
+      <Card className="glass-card p-4 md:p-6">
+        <h3 className="text-lg md:text-xl font-display font-semibold mb-3 md:mb-4">{t('debts.title')}</h3>
         {loading ? (
           <div className="text-center py-12 text-muted-foreground">
             <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent mx-auto mb-4" />
@@ -371,41 +373,42 @@ const Debts = () => {
                 key={debt.id}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="flex items-center justify-between p-4 rounded-xl bg-muted/50 hover:bg-muted transition-colors"
+                className="flex items-center justify-between p-3 md:p-4 rounded-lg md:rounded-xl bg-muted/50 hover:bg-muted transition-colors"
               >
-                <div className="flex items-center gap-4 flex-1">
-                  <div className={`p-3 rounded-lg ${debt.type === 'given' ? 'gradient-warning' : 'gradient-success'}`}>
+                <div className="flex items-center gap-2 md:gap-4 flex-1 min-w-0">
+                  <div className={`p-2 md:p-3 rounded-lg ${debt.type === 'given' ? 'gradient-warning' : 'gradient-success'} shrink-0`}>
                     {debt.type === 'given' ? (
-                      <TrendingUp className="w-5 h-5 text-white" />
+                      <TrendingUp className="w-4 h-4 md:w-5 md:h-5 text-white" />
                     ) : (
-                      <TrendingDown className="w-5 h-5 text-white" />
+                      <TrendingDown className="w-4 h-4 md:w-5 md:h-5 text-white" />
                     )}
                   </div>
-                  <div className="flex-1">
-                    <p className="font-semibold">{debt.person_name}</p>
-                    <p className="text-sm text-muted-foreground">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-sm md:text-base truncate">{debt.person_name}</p>
+                    <p className="text-xs md:text-sm text-muted-foreground">
                       {debt.type === 'given' ? t('debts.given') : t('debts.received')}
                     </p>
                     {debt.description && (
-                      <p className="text-xs text-muted-foreground mt-1">{debt.description}</p>
+                      <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{debt.description}</p>
                     )}
                   </div>
-                  <div className="text-right">
-                    <p className={`text-xl font-display font-bold ${debt.type === 'given' ? 'text-warning' : 'text-success'}`}>
+                  <div className="text-right shrink-0 ml-2">
+                    <p className={`text-base md:text-xl font-display font-bold ${debt.type === 'given' ? 'text-warning' : 'text-success'}`}>
                       {debt.type === 'given' ? '-' : '+'}{debt.amount.toLocaleString()} DZD
                     </p>
                     <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
                       <Calendar className="w-3 h-3" />
-                      {format(new Date(debt.date), 'MMM dd, yyyy')}
+                      <span className="hidden sm:inline">{format(new Date(debt.date), 'MMM dd, yyyy')}</span>
+                      <span className="sm:hidden">{format(new Date(debt.date), 'MM/dd')}</span>
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 ml-4">
+                <div className="flex items-center gap-1 md:gap-2 ml-2 shrink-0">
                   <Select
                     value={debt.status}
                     onValueChange={(value: 'pending' | 'paid' | 'received') => handleStatusChange(debt, value)}
                   >
-                    <SelectTrigger className="w-[120px]">
+                    <SelectTrigger className="w-[100px] md:w-[120px] h-8 md:h-10 text-xs md:text-sm">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -418,14 +421,15 @@ const Debts = () => {
                     onClick={() => handleEdit(debt)}
                     variant="ghost"
                     size="icon"
+                    className="h-8 w-8 md:h-10 md:w-10"
                   >
-                    <span className="text-sm">{t('common.edit')}</span>
+                    <span className="text-xs md:text-sm">{t('common.edit')}</span>
                   </Button>
                   <Button
                     onClick={() => handleDelete(debt.id)}
                     variant="ghost"
                     size="icon"
-                    className="text-destructive hover:text-destructive"
+                    className="text-destructive hover:text-destructive h-8 w-8 md:h-10 md:w-10"
                   >
                     <X className="w-4 h-4" />
                   </Button>

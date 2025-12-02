@@ -47,7 +47,7 @@ All colors MUST be HSL.
 
     --radius: 1rem;
     
-    --success: 145 65% 50%;
+    --success: 151 99% 42%;
     --success-foreground: 0 0% 100%;
     
     --warning: 40 95% 55%;
@@ -96,7 +96,7 @@ All colors MUST be HSL.
     --input: 220 20% 20%;
     --ring: 215 85% 60%;
     
-    --success: 145 65% 55%;
+    --success: 151 99% 42%;
     --success-foreground: 0 0% 100%;
     
     --warning: 40 95% 60%;
@@ -124,7 +124,7 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-family: 'Inter', 'Tajawal', system-ui, -apple-system, sans-serif;
     /* Prevent horizontal scroll on mobile */
     overflow-x: hidden;
     /* Better text rendering on mobile */
@@ -133,7 +133,19 @@ All colors MUST be HSL.
   }
   
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Outfit', system-ui, -apple-system, sans-serif;
+    font-family: 'Outfit', 'Tajawal', system-ui, -apple-system, sans-serif;
+  }
+
+  /* Arabic font support */
+  [dir="rtl"], [lang="ar"] {
+    font-family: 'Tajawal', 'Inter', system-ui, -apple-system, sans-serif;
+  }
+
+  [dir="rtl"] h1, [dir="rtl"] h2, [dir="rtl"] h3, 
+  [dir="rtl"] h4, [dir="rtl"] h5, [dir="rtl"] h6,
+  [lang="ar"] h1, [lang="ar"] h2, [lang="ar"] h3,
+  [lang="ar"] h4, [lang="ar"] h5, [lang="ar"] h6 {
+    font-family: 'Tajawal', 'Outfit', system-ui, -apple-system, sans-serif;
   }
 }
 
