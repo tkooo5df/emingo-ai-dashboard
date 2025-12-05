@@ -292,6 +292,39 @@ const Account = () => {
           </div>
         </motion.div>
 
+        {/* Total Balance with Debts */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-6 md:mb-8"
+        >
+          <Card className="glass-card p-4 md:p-6">
+            <div className="text-center">
+              <p className="text-xs md:text-sm text-muted-foreground mb-2">{t('account.totalBalance')}</p>
+              <p className="text-2xl md:text-4xl font-display font-bold">
+                {(balance + debtsReceived - debtsGiven).toLocaleString()} DZD
+              </p>
+              <div className="mt-2 text-xs md:text-sm text-muted-foreground space-y-1">
+                <p>{t('account.balance')}: {balance.toLocaleString()} DZD</p>
+                {debtsReceived > 0 && (
+                  <p className="text-success">+ {t('account.debtsReceived')}: {debtsReceived.toLocaleString()} DZD</p>
+                )}
+                {debtsGiven > 0 && (
+                  <p className="text-warning">- {t('account.debtsGiven')}: {debtsGiven.toLocaleString()} DZD</p>
+                )}
+                {debtsReceived === 0 && debtsGiven === 0 && (
+                  <p className="text-muted-foreground">{t('account.noDebts')}</p>
+                )}
+              </div>
+            </div>
+          </Card>
+        </motion.div>
+                </>
+              )}
+            </div>
+          </div>
+        </motion.div>
+
         {/* Action Buttons */}
         <div className="flex gap-4 md:gap-6 justify-center items-center">
           <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>

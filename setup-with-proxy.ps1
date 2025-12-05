@@ -28,3 +28,4 @@ Write-Host "✅ تم!" -ForegroundColor Green
 Write-Host ""
 Write-Host "💡 لإغلاق proxy، أغلق نافذة PowerShell المنفصلة" -ForegroundColor Cyan
 
+

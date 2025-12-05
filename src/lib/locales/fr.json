@@ -150,7 +150,11 @@
     "addExpenseDescription": "Ajouter une nouvelle transaction de dépense",
     "errorLoadingBalance": "Impossible de charger le solde du compte",
     "errorSavingTransaction": "Impossible d'enregistrer la transaction",
-    "balanceAfterDebts": "Solde après dettes"
+    "balanceAfterDebts": "Solde après dettes",
+    "totalBalance": "Solde Total",
+    "debtsReceived": "Dettes Reçues",
+    "debtsGiven": "Dettes Données",
+    "noDebts": "Aucune dette"
   },
   "income": {
     "title": "Gestionnaire de Revenus",
@@ -374,6 +378,9 @@
     "aboutYourself": "À propos de vous",
     "currency": "Devise",
     "currencyDescription": "Sélectionnez votre devise préférée pour afficher les montants",
+    "exchangeRates": "Taux de change",
+    "exchangeRatesDescription": "Définir les taux de change pour les devises étrangères (1 unité = X DZD)",
+    "exchangeRateHint": "Entrez le taux de change pour {{currency}} en dinar algérien",
     "customCategories": "Catégories personnalisées",
     "customCategoriesDescription": "Ajouter des catégories personnalisées pour les revenus et dépenses",
     "accounts": "Comptes et cartes",

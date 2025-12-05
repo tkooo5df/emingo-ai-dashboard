@@ -105,3 +105,4 @@ SELECT * FROM expenses LIMIT 5;
 
 جميع البيانات الآن تُحفظ في قاعدة بيانات PostgreSQL على Fly.io بدلاً من localStorage.
 
+

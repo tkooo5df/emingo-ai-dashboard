@@ -36,3 +36,4 @@ foreach ($cmd in $commands) {
 
 Write-Host "`n✅ بعد التنفيذ، تحقق من الجداول بـ: \dt" -ForegroundColor Green
 
+

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Target, TrendingUp, GraduationCap, Briefcase, Calendar, Trash2 } from 'lucide-react';
+import { Plus, Target, TrendingUp, GraduationCap, Briefcase, Calendar, Trash2, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -24,6 +24,7 @@ const Goals = () => {
   const [showForm, setShowForm] = useState(false);
   const [selectedGoalAdvice, setSelectedGoalAdvice] = useState<{ id: string; advice: string } | null>(null);
   const [loadingAdvice, setLoadingAdvice] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
     type: 'financial' as 'financial' | 'career' | 'education',
@@ -57,6 +58,14 @@ const Goals = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    e.stopPropagation();
+    
+    // Prevent double submission
+    if (isSubmitting) {
+      return;
+    }
+    
+    setIsSubmitting(true);
     
     const newGoal: Goal = {
       id: crypto.randomUUID(),
@@ -85,12 +94,14 @@ const Goals = () => {
         title: t('goals.goalAdded'),
         description: t('goals.goalAddedDesc', { title: newGoal.title }),
       });
+      setIsSubmitting(false);
     } catch (error) {
       toast({
         title: t('goals.errorAdding'),
         description: t('goals.errorAddingDesc'),
         variant: 'destructive',
       });
+      setIsSubmitting(false);
     }
   };
 
@@ -292,8 +303,9 @@ const Goals = () => {
               </div>
 
               <div className="flex gap-3">
-                <Button type="submit" className="gradient-accent text-white">
-                  {t('goals.createGoal')}
+                <Button type="submit" className="gradient-accent text-white" disabled={isSubmitting}>
+                  {isSubmitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                  {isSubmitting ? t('common.loading') : t('goals.createGoal')}
                 </Button>
                 <Button type="button" variant="outline" onClick={() => setShowForm(false)}>
                   {t('common.cancel')}

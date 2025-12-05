@@ -81,3 +81,4 @@ flyctl postgres attach --app your-app-name emingo-db
 
 This will automatically set the `DATABASE_URL` secret.
 
+

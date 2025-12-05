@@ -46,3 +46,4 @@ flyctl postgres connect -a emingo-db
 
 **ملاحظة:** إذا ظهرت رسالة "already exists" فهذا يعني أن الجدول موجود بالفعل ✅
 
+

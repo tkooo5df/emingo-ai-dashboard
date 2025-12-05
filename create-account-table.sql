@@ -17,3 +17,4 @@ CREATE INDEX IF NOT EXISTS idx_account_transactions_date ON account_transactions
 CREATE INDEX IF NOT EXISTS idx_account_transactions_type ON account_transactions(type);
 CREATE INDEX IF NOT EXISTS idx_account_transactions_account_type ON account_transactions(account_type);
 
+

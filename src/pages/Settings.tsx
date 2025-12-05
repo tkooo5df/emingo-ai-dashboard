@@ -78,6 +78,10 @@ interface Category {
 
 interface Settings {
   currency: string;
+  exchange_rates?: {
+    EUR?: number;
+    USDT?: number;
+  };
   custom_categories: Category[];
   accounts: Array<{
     id: string;
@@ -208,6 +212,7 @@ const Settings = () => {
   }, [i18n.language, currentLanguage]);
   const [settings, setSettings] = useState<Settings>({
     currency: 'DZD',
+    exchange_rates: { EUR: 0, USDT: 0 },
     custom_categories: [],
     accounts: [],
     analytics_preferences: {
@@ -303,6 +308,7 @@ const Settings = () => {
       
       setSettings({
         currency: data.currency || 'DZD',
+        exchange_rates: data.exchange_rates || { EUR: 0, USDT: 0 },
         language: data.language || 'en',
         custom_categories: categories,
         accounts: data.accounts || [],
@@ -337,6 +343,7 @@ const Settings = () => {
       // Use defaults if loading fails
       setSettings({
         currency: 'DZD',
+        exchange_rates: { EUR: 0, USDT: 0 },
         custom_categories: DEFAULT_CATEGORIES,
         accounts: [],
         analytics_preferences: {
@@ -576,6 +583,63 @@ const Settings = () => {
                   </option>
                 ))}
               </select>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Exchange Rates Settings */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="w-5 h-5" />
+              {t('settings.exchangeRates')}
+            </CardTitle>
+            <CardDescription>
+              {t('settings.exchangeRatesDescription')}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="eur-rate">EUR (يورو) → DZD</Label>
+                <Input
+                  id="eur-rate"
+                  type="number"
+                  step="0.0001"
+                  value={settings.exchange_rates?.EUR || 0}
+                  onChange={(e) => setSettings({
+                    ...settings,
+                    exchange_rates: {
+                      ...settings.exchange_rates,
+                      EUR: parseFloat(e.target.value) || 0
+                    }
+                  })}
+                  placeholder="مثال: 145.50"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  {t('settings.exchangeRateHint', { currency: 'EUR' })}
+                </p>
+              </div>
+              <div>
+                <Label htmlFor="usdt-rate">USDT → DZD</Label>
+                <Input
+                  id="usdt-rate"
+                  type="number"
+                  step="0.0001"
+                  value={settings.exchange_rates?.USDT || 0}
+                  onChange={(e) => setSettings({
+                    ...settings,
+                    exchange_rates: {
+                      ...settings.exchange_rates,
+                      USDT: parseFloat(e.target.value) || 0
+                    }
+                  })}
+                  placeholder="مثال: 135.00"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  {t('settings.exchangeRateHint', { currency: 'USDT' })}
+                </p>
+              </div>
             </div>
           </CardContent>
         </Card>

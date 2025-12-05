@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Briefcase, Clock, DollarSign, Calendar } from 'lucide-react';
+import { Plus, Briefcase, Clock, DollarSign, Calendar, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -21,6 +21,7 @@ const Projects = () => {
   const [showForm, setShowForm] = useState(false);
   const [aiAdvice, setAiAdvice] = useState<string>('');
   const [loadingAdvice, setLoadingAdvice] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     client: '',
@@ -53,6 +54,14 @@ const Projects = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    e.stopPropagation();
+    
+    // Prevent double submission
+    if (isSubmitting) {
+      return;
+    }
+    
+    setIsSubmitting(true);
     
     const newProject: Project = {
       id: crypto.randomUUID(),
@@ -81,12 +90,14 @@ const Projects = () => {
         title: t('projects.projectAdded'),
         description: t('projects.projectAddedDesc', { name: newProject.name }),
       });
+      setIsSubmitting(false);
     } catch (error) {
       toast({
         title: t('projects.errorAdding'),
         description: t('projects.errorAddingDesc'),
         variant: 'destructive',
       });
+      setIsSubmitting(false);
     }
   };
 
@@ -305,8 +316,9 @@ const Projects = () => {
               </div>
 
               <div className="flex gap-2 md:gap-3">
-                <Button type="submit" className="gradient-primary text-white h-9 md:h-10 text-xs md:text-sm flex-1">
-                  {t('projects.addProject')}
+                <Button type="submit" className="gradient-primary text-white h-9 md:h-10 text-xs md:text-sm flex-1" disabled={isSubmitting}>
+                  {isSubmitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                  {isSubmitting ? t('common.loading') : t('projects.addProject')}
                 </Button>
                 <Button type="button" variant="outline" onClick={() => setShowForm(false)} className="h-9 md:h-10 text-xs md:text-sm">
                   {t('common.cancel')}

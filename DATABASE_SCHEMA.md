@@ -356,3 +356,4 @@ Potential additions:
 - `recurring_transactions` table for automated entries
 - `budget_alerts` table for budget warnings
 
+

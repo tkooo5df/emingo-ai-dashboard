@@ -1,6 +1,6 @@
 {
-  "name": "EMINGO - Personal Finance & Productivity Dashboard",
-  "short_name": "EMINGO",
+  "name": "emingo",
+  "short_name": "emingo",
   "description": "إدارة مالية شخصية ذكية للطلاب والعاملين المستقلين. تتبع الدخل والمصروفات، إدارة الميزانية، الأهداف والمشاريع مع مساعد ذكي بالذكاء الاصطناعي.",
   "start_url": "/",
   "display": "standalone",

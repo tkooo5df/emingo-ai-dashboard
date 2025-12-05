@@ -4,6 +4,9 @@ import { api } from './api';
 export interface IncomeEntry {
   id: string;
   amount: number;
+  currency?: string;
+  amount_in_dzd?: number;
+  exchange_rate?: number;
   source: string;
   category: string;
   date: string;
@@ -15,6 +18,9 @@ export interface IncomeEntry {
 export interface ExpenseEntry {
   id: string;
   amount: number;
+  currency?: string;
+  amount_in_dzd?: number;
+  exchange_rate?: number;
   category: string;
   date: string;
   description?: string;

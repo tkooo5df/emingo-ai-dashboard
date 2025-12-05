@@ -1,6 +1,7 @@
 // AI Service using You.com Advanced Agent API (via API server proxy to avoid CORS)
 import { getIncome, getExpenses, getProjects, getGoals, getBudget } from './storage';
 import { api } from './api';
+import { getAccessToken } from './auth';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
@@ -9,35 +10,49 @@ interface AIMessage {
   content: string;
 }
 
-export const callAI = async (prompt: string, systemContext?: string): Promise<string> => {
+export const callAI = async (prompt: string, systemContext?: string, sessionId?: string): Promise<{ response: string; session_id: string }> => {
   try {
     // Combine system context and user prompt
     const fullPrompt = systemContext 
       ? `${systemContext}\n\n${prompt}`
       : prompt;
 
+    const token = await getAccessToken();
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json'
+    };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
     const response = await fetch(`${API_BASE_URL}/ai/chat`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
+      headers,
       body: JSON.stringify({
-        text: fullPrompt
+        text: fullPrompt,
+        session_id: sessionId
       })
     });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ error: { message: response.statusText } }));
       console.error('AI API Error:', errorData);
-      return `AI service error: ${errorData.error?.message || errorData.message || response.statusText}`;
+      const errorMessage = `AI service error: ${errorData.error?.message || errorData.message || response.statusText}`;
+      return { response: errorMessage, session_id: sessionId || '' };
     }
 
     const data = await response.json();
     // The new API returns the response directly in the response body
-    return data.response || data.text || data.message || JSON.stringify(data) || 'No response from AI';
+    return {
+      response: data.response || data.text || data.message || JSON.stringify(data) || 'No response from AI',
+      session_id: data.session_id || sessionId || ''
+    };
   } catch (error: any) {
     console.error('AI Service Error:', error);
-    return `Failed to get AI response: ${error.message || 'Unknown error'}`;
+    return {
+      response: `Failed to get AI response: ${error.message || 'Unknown error'}`,
+      session_id: sessionId || ''
+    };
   }
 };
 
@@ -119,10 +134,10 @@ Provide brief spending insights based on this data.`;
     
     const systemPrompt = `You are a financial analyst. Answer in ${userLanguage === 'ar' ? 'Arabic' : userLanguage === 'fr' ? 'French' : 'English'}. Be brief and concise. No markdown, no asterisks.`;
     
-    const response = await callAI(prompt, systemPrompt);
+    const result = await callAI(prompt, systemPrompt);
     
     // Clean response
-    return response
+    return result.response
       .replace(/\*\*/g, '')
       .replace(/\*/g, '')
       .replace(/#{1,6}\s/g, '')
@@ -167,12 +182,12 @@ Provide a JSON response with percentages (must sum to 100):
   "recommendation": "<brief explanation of this allocation>"
 }`;
     
-    const response = await callAI(prompt, 'You are a financial planner. Respond ONLY with valid JSON.');
+    const result = await callAI(prompt, 'You are a financial planner. Respond ONLY with valid JSON.');
     
     try {
       // Extract JSON from response (in case there's extra text)
-      const jsonMatch = response.match(/\{[\s\S]*\}/);
-      const jsonStr = jsonMatch ? jsonMatch[0] : response;
+      const jsonMatch = result.response.match(/\{[\s\S]*\}/);
+      const jsonStr = jsonMatch ? jsonMatch[0] : result.response;
       const parsed = JSON.parse(jsonStr);
       
       return {
@@ -228,7 +243,8 @@ Provide:
 2. Time allocation suggestion
 3. One productivity tip`;
     
-    return await callAI(prompt, 'You are a productivity coach for freelancers.');
+    const result = await callAI(prompt, 'You are a productivity coach for freelancers.');
+    return result.response;
   } catch (error) {
     console.error('Error getting prioritization advice:', error);
     return 'Focus on projects with the nearest deadlines and highest expected earnings.';
@@ -250,7 +266,8 @@ Provide:
 2. Monthly milestones to reach the goal
 3. One specific action to take this week`;
     
-    return await callAI(prompt, 'You are a goal-setting coach.');
+    const result = await callAI(prompt, 'You are a goal-setting coach.');
+    return result.response;
   } catch (error) {
     console.error('Error getting goal advice:', error);
     return 'Break down your goal into smaller weekly milestones to stay on track.';
@@ -383,20 +400,43 @@ function calculateFinancialStats(income: any[], expenses: any[], projects: any[]
 }
 
 // General assistant query with comprehensive context - based on user's current data only
-export const askAssistant = async (question: string): Promise<string> => {
+export const askAssistant = async (question: string, sessionId?: string): Promise<{ response: string; session_id: string }> => {
   try {
-    // Fetch user's current data
-    const [income, expenses, projects, goals, budget] = await Promise.all([
+    // Fetch user's current data including debts
+    const [income, expenses, projects, goals, budget, debts] = await Promise.all([
       getIncome(),
       getExpenses(),
       getProjects(),
       getGoals(),
-      getBudget()
+      getBudget(),
+      api.getDebts().catch(() => []) // Get debts, fallback to empty array if error
     ]);
     
     // Calculate comprehensive financial statistics from user's actual data
     const stats = calculateFinancialStats(income, expenses, projects, goals, budget);
     const activeProjects = projects.filter(p => p.status === 'ongoing');
+    
+    // Calculate debts summary
+    const debtsGiven = debts.filter((d: any) => d.type === 'given').reduce((sum: number, d: any) => sum + d.amount, 0);
+    const debtsReceived = debts.filter((d: any) => d.type === 'received').reduce((sum: number, d: any) => sum + d.amount, 0);
+    const pendingDebtsGiven = debts.filter((d: any) => d.type === 'given' && d.status === 'pending').reduce((sum: number, d: any) => sum + d.amount, 0);
+    const pendingDebtsReceived = debts.filter((d: any) => d.type === 'received' && d.status === 'pending').reduce((sum: number, d: any) => sum + d.amount, 0);
+    
+    // Projects details
+    const projectsDetails = activeProjects.map((p: any) => 
+      `${p.name} (Client: ${p.client || 'N/A'}, Deadline: ${p.deadline || 'N/A'}, Expected: ${p.expectedEarnings || 0} DZD, Status: ${p.status})`
+    ).join(' | ');
+    
+    // Goals details
+    const goalsDetails = goals.map((g: any) => {
+      const progress = g.target > 0 ? ((g.current / g.target) * 100).toFixed(1) : '0';
+      return `${g.title} (Target: ${g.target} DZD, Current: ${g.current} DZD, Progress: ${progress}%, Deadline: ${g.deadline || 'N/A'})`;
+    }).join(' | ');
+    
+    // Debts details
+    const debtsDetails = debts.length > 0 ? debts.map((d: any) => 
+      `${d.type === 'given' ? 'Given to' : 'Received from'} ${d.person_name}: ${d.amount} DZD (Status: ${d.status}${d.description ? `, Note: ${d.description}` : ''})`
+    ).join(' | ') : 'No debts recorded';
     
     // Get user profile for personalized context
     let profileInfo = {
@@ -434,10 +474,24 @@ USER'S CURRENT FINANCIAL DATA:
 Monthly Income: ${stats.monthlyIncome.toLocaleString()} DZD | Monthly Expenses: ${stats.monthlyExpenses.toLocaleString()} DZD | Net Balance: ${(stats.monthlyIncome - stats.monthlyExpenses).toLocaleString()} DZD
 Savings Rate: ${stats.savingsRate}% | Income Trend: ${parseFloat(stats.incomeTrend) > 0 ? '+' : ''}${stats.incomeTrend}% | Expense Trend: ${parseFloat(stats.expenseTrend) > 0 ? '+' : ''}${stats.expenseTrend}%
 Top Expense Category: ${stats.topExpenseCategory ? `${stats.topExpenseCategory[0]} (${stats.topExpenseCategory[1].toLocaleString()} DZD)` : 'N/A'} | Top Income Source: ${stats.topIncomeSource ? `${stats.topIncomeSource[0]} (${stats.topIncomeSource[1].toLocaleString()} DZD)` : 'N/A'}
-Active Projects: ${stats.activeProjects} (${stats.totalExpectedEarnings.toLocaleString()} DZD potential) | Active Goals: ${stats.activeGoals}
 ${stats.monthlyExpenses > stats.monthlyIncome ? 'WARNING: Monthly expenses exceed monthly income' : ''}
 ${income.length > 0 ? `Total Income Entries: ${income.length}` : 'No income recorded yet'}
 ${expenses.length > 0 ? `Total Expense Entries: ${expenses.length}` : 'No expenses recorded yet'}
+
+DEBTS INFORMATION:
+Total Debts Given: ${debtsGiven.toLocaleString()} DZD | Total Debts Received: ${debtsReceived.toLocaleString()} DZD
+Pending Debts Given: ${pendingDebtsGiven.toLocaleString()} DZD | Pending Debts Received: ${pendingDebtsReceived.toLocaleString()} DZD
+Net Debts Position: ${(debtsReceived - debtsGiven).toLocaleString()} DZD ${debtsReceived > debtsGiven ? '(positive - money owed to you)' : debtsGiven > debtsReceived ? '(negative - you owe money)' : '(balanced)'}
+${debts.length > 0 ? `Debts Details: ${debtsDetails}` : 'No debts recorded'}
+
+PROJECTS INFORMATION:
+Active Projects: ${stats.activeProjects} | Total Expected Earnings: ${stats.totalExpectedEarnings.toLocaleString()} DZD
+Completed Projects: ${stats.completedProjects}
+${activeProjects.length > 0 ? `Projects Details: ${projectsDetails}` : 'No active projects'}
+
+GOALS INFORMATION:
+Active Goals: ${stats.activeGoals}
+${goals.length > 0 ? `Goals Details: ${goalsDetails}` : 'No goals set'}
 
 USER'S QUESTION: ${question}
 
@@ -445,18 +499,29 @@ IMPORTANT: Provide advice based ONLY on the user's actual data shown above. Use 
     
     const systemPrompt = `You are EMINGO AI, a financial assistant. Answer in ${userLanguage === 'ar' ? 'Arabic' : userLanguage === 'fr' ? 'French' : 'English'}. Be brief, concise, and direct. No markdown, no asterisks, no formatting. Use simple sentences. Provide personalized advice based ONLY on the user's actual current financial data provided. Do not use generic advice - use their specific numbers and situation.`;
     
-    const response = await callAI(context, systemPrompt);
+    // Send only the user's question as the user message, with context as system prompt
+    // This way, only the question is saved to database, not the full context
+    const result = await callAI(question, context, sessionId);
     
     // Clean response: remove markdown, asterisks, and excessive formatting
-    return response
+    const cleanedResponse = result.response
       .replace(/\*\*/g, '')
       .replace(/\*/g, '')
       .replace(/#{1,6}\s/g, '')
       .replace(/```[\s\S]*?```/g, '')
       .replace(/`/g, '')
       .trim();
+    
+    // Return response with session_id from API
+    return {
+      response: cleanedResponse,
+      session_id: result.session_id || sessionId || ''
+    };
   } catch (error) {
     console.error('Error asking assistant:', error);
-    return 'I apologize, but I encountered an error. Please try again.';
+    return {
+      response: 'I apologize, but I encountered an error. Please try again.',
+      session_id: sessionId || ''
+    };
   }
 };

@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, TrendingUp, Calendar, DollarSign, Wallet, Banknote, CreditCard, Tag, Trash2, Pencil, type LucideIcon } from 'lucide-react';
+import { Plus, TrendingUp, Calendar, DollarSign, Wallet, Banknote, CreditCard, Tag, Trash2, Pencil, Loader2, type LucideIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -33,10 +33,12 @@ const Income = () => {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingIncome, setEditingIncome] = useState<IncomeEntry | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [formData, setFormData] = useState({
     amount: '',
+    currency: 'DZD',
     source: '',
     category: '',
     date: format(new Date(), 'yyyy-MM-dd'),
@@ -106,6 +108,14 @@ const Income = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    e.stopPropagation();
+    
+    // Prevent double submission
+    if (isSubmitting) {
+      return;
+    }
+    
+    setIsSubmitting(true);
 
     // Get account type from selected account
     let accountType = formData.account_type;
@@ -123,6 +133,7 @@ const Income = () => {
 
         await api.updateIncome(editingIncome.id, {
           amount: parseFloat(formData.amount),
+          currency: formData.currency,
           source: formData.source,
           category: formData.category,
           date: formData.date,
@@ -140,6 +151,7 @@ const Income = () => {
         const newEntry: IncomeEntry = {
           id: crypto.randomUUID(),
           amount: parseFloat(formData.amount),
+          currency: formData.currency,
           source: formData.source,
           category: formData.category,
           date: formData.date,
@@ -150,21 +162,7 @@ const Income = () => {
 
         await addIncome(newEntry);
         
-        // Also add to account_transactions for synchronization
-        if (formData.account_id && accountType) {
-          const transactionData = {
-            type: 'income',
-            amount: newEntry.amount,
-            name: newEntry.source,
-            category: newEntry.category || null,
-            date: newEntry.date,
-            account_id: formData.account_id,
-            account_type: accountType,
-            note: newEntry.description || null
-          };
-
-          await api.addAccountTransaction(transactionData);
-        }
+        // Note: account_transactions is automatically added by the backend API
         toast({
           title: t('income.incomeAdded'),
           description: t('income.incomeAddedDesc', { amount: newEntry.amount, source: newEntry.source }),
@@ -184,6 +182,7 @@ const Income = () => {
         account_id: '',
         account_type: ''
       });
+      setIsSubmitting(false);
     } catch (error) {
       console.error('❌ [INCOME PAGE] Error in handleSubmit:', error);
       console.error('❌ [INCOME PAGE] Error details:', {
@@ -196,6 +195,7 @@ const Income = () => {
         description: editingIncome ? t('income.errorUpdatingDesc') : t('income.errorAddingDesc'),
         variant: 'destructive',
       });
+      setIsSubmitting(false);
     }
   };
 
@@ -284,6 +284,23 @@ const Income = () => {
                     onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
                     placeholder="0.00"
                   />
+                </div>
+
+                <div>
+                  <Label htmlFor="currency">{t('common.currency')}</Label>
+                  <Select
+                    value={formData.currency}
+                    onValueChange={(value) => setFormData({ ...formData, currency: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="DZD">DZD (دينار جزائري)</SelectItem>
+                      <SelectItem value="EUR">EUR (يورو)</SelectItem>
+                      <SelectItem value="USDT">USDT</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div>
@@ -390,14 +407,16 @@ const Income = () => {
                 </div>
 
               <div className="flex gap-3">
-                <Button type="submit" className="gradient-success text-white">
-                  {editingIncome ? t('common.save') : t('income.addIncome')}
+                <Button type="submit" className="gradient-success text-white" disabled={isSubmitting}>
+                  {isSubmitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                  {isSubmitting ? t('common.loading') : (editingIncome ? t('common.save') : t('income.addIncome'))}
                 </Button>
                 <Button type="button" variant="outline" onClick={() => {
                   setShowForm(false);
                   setEditingIncome(null);
                   setFormData({
                     amount: '',
+                    currency: 'DZD',
                     source: '',
                     category: '',
                     date: format(new Date(), 'yyyy-MM-dd'),
@@ -423,48 +442,53 @@ const Income = () => {
             <p>{t('income.noIncome')}</p>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-1.5 md:space-y-3">
             {income.map(entry => (
               <motion.div
                 key={entry.id}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="flex items-center justify-between p-4 rounded-xl bg-muted/50 hover:bg-muted transition-colors"
+                className="flex items-center justify-between p-2 md:p-4 rounded-lg md:rounded-xl bg-muted/50 hover:bg-muted transition-colors"
               >
-                <div className="flex items-center gap-4 flex-1">
-                  <div className="p-3 rounded-lg gradient-success">
-                    <TrendingUp className="w-5 h-5 text-white" />
+                <div className="flex items-center gap-2 md:gap-3 flex-1 min-w-0">
+                  <div className="p-1.5 md:p-2 rounded-md md:rounded-lg gradient-success shrink-0">
+                    <TrendingUp className="w-3 h-3 md:w-5 md:h-5 text-white" />
                   </div>
-                  <div className="flex-1">
-                    <p className="font-semibold">{entry.source}</p>
-                    <p className="text-sm text-muted-foreground">{entry.category}</p>
-                    {entry.description && (
-                      <p className="text-xs text-muted-foreground mt-1">{entry.description}</p>
-                    )}
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="text-right">
-                    <p className="text-xl font-display font-bold text-success">
-                      +{entry.amount.toLocaleString()} DZD
-                    </p>
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
-                      <Calendar className="w-3 h-3" />
-                      {format(new Date(entry.date), 'MMM dd, yyyy')}
+                  <div className="flex-1 min-w-0 flex items-center gap-2 md:gap-3 overflow-hidden">
+                    <div className="min-w-0 flex-1">
+                      <p className="font-semibold text-xs md:text-base truncate">{entry.source}</p>
+                      <p className="text-[10px] md:text-sm text-muted-foreground truncate">{entry.category}</p>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <p className="text-sm md:text-xl font-display font-bold text-success whitespace-nowrap">
+                        +{entry.amount.toLocaleString()} {entry.currency || 'DZD'}
+                      </p>
+                      {entry.currency && entry.currency !== 'DZD' && entry.amount_in_dzd && (
+                        <p className="text-[10px] md:text-xs text-muted-foreground">
+                          ≈ {entry.amount_in_dzd.toLocaleString()} DZD
+                        </p>
+                      )}
+                      <div className="flex items-center gap-1 text-[10px] md:text-xs text-muted-foreground">
+                        <Calendar className="w-2.5 h-2.5 md:w-3 md:h-3" />
+                        <span className="whitespace-nowrap">{format(new Date(entry.date), 'MMM dd, yyyy')}</span>
+                      </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
+                </div>
+                <div className="flex items-center gap-1 ml-1 md:ml-4 shrink-0">
+                  <Button
+                    onClick={() => handleEdit(entry)}
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 w-7 md:h-9 md:w-9 p-0 text-xs"
+                  >
+                    <Pencil className="w-3 h-3 md:w-4 md:h-4" />
+                  </Button>
                     <Button
-                      onClick={() => handleEdit(entry)}
-                      variant="ghost"
-                      size="icon"
-                      className="text-primary hover:text-primary hover:bg-primary/10"
-                    >
-                      <Pencil className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      onClick={async () => {
-
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        
                         if (!entry.id) {
                           console.error('❌ [INCOME] Entry ID is missing!');
                           toast({
@@ -476,37 +500,36 @@ const Income = () => {
                         }
                         
                         if (confirm(t('income.confirmDelete'))) {
-                          try {
-
-                            await api.deleteIncome(entry.id);
-
-                            await loadIncome();
-                            toast({
-                              title: t('success.deleted'),
-                              description: t('income.incomeDeleted'),
-                            });
-                          } catch (error) {
-                            console.error('❌ [INCOME] Error deleting income:', error);
-                            console.error('❌ [INCOME] Error details:', {
-                              message: error instanceof Error ? error.message : String(error),
-                              entryId: entry.id,
-                              entry
-                            });
-                            toast({
-                              title: t('errors.errorDeleting'),
-                              description: error instanceof Error ? error.message : t('errors.couldNotDelete'),
-                              variant: 'destructive',
-                            });
-                          }
+                          (async () => {
+                            try {
+                              await api.deleteIncome(entry.id);
+                              await loadIncome();
+                              toast({
+                                title: t('success.deleted'),
+                                description: t('income.incomeDeleted'),
+                              });
+                            } catch (error) {
+                              console.error('❌ [INCOME] Error deleting income:', error);
+                              console.error('❌ [INCOME] Error details:', {
+                                message: error instanceof Error ? error.message : String(error),
+                                entryId: entry.id,
+                                entry
+                              });
+                              toast({
+                                title: t('errors.errorDeleting'),
+                                description: error instanceof Error ? error.message : t('errors.couldNotDelete'),
+                                variant: 'destructive',
+                              });
+                            }
+                          })();
                         }
                       }}
                       variant="ghost"
-                      size="icon"
-                      className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                      size="sm"
+                      className="text-destructive hover:text-destructive h-7 w-7 md:h-9 md:w-9 p-0 text-xs"
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Trash2 className="w-3 h-3 md:w-4 md:h-4" />
                     </Button>
-                  </div>
                 </div>
               </motion.div>
             ))}

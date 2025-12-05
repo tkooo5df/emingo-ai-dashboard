@@ -38,3 +38,4 @@ server: {
 - ✅ Vite dev server starting
 - ✅ Application should be accessible at http://localhost:8080
 
+

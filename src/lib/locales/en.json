@@ -150,7 +150,11 @@
     "addExpenseDescription": "Add a new expense transaction",
     "errorLoadingBalance": "Could not load account balance",
     "errorSavingTransaction": "Could not save transaction",
-    "balanceAfterDebts": "Balance After Debts"
+    "balanceAfterDebts": "Balance After Debts",
+    "totalBalance": "Total Balance",
+    "debtsReceived": "Debts Received",
+    "debtsGiven": "Debts Given",
+    "noDebts": "No debts"
   },
   "income": {
     "title": "Income Manager",
@@ -371,6 +375,9 @@
     "aboutYourself": "About Yourself",
     "currency": "Currency",
     "currencyDescription": "Select your preferred currency for displaying amounts",
+    "exchangeRates": "Exchange Rates",
+    "exchangeRatesDescription": "Set exchange rates for foreign currencies (1 unit = X DZD)",
+    "exchangeRateHint": "Enter the exchange rate for {{currency}} to Algerian Dinar",
     "customCategories": "Custom Categories",
     "customCategoriesDescription": "Add custom categories for income and expenses",
     "accounts": "Accounts & Cards",

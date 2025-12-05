@@ -1,4 +1,6 @@
 // Authentication utilities using Fly.io API Server
+import { encryptData, decryptData, clearEncryptionKey } from './encryption';
+
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
 export interface User {
@@ -8,19 +10,36 @@ export interface User {
   avatar_url?: string;
 }
 
-// Get token from localStorage
+// Get token from localStorage (encrypted)
 function getToken(): string | null {
-  return localStorage.getItem('auth_token');
+  try {
+    const encryptedToken = localStorage.getItem('auth_token');
+    if (!encryptedToken) return null;
+    
+    // Try to decrypt (handles both encrypted and legacy unencrypted tokens)
+    const decrypted = decryptData(encryptedToken);
+    return decrypted || null;
+  } catch (error) {
+    // If decryption fails, try to read as plain text (legacy support)
+    return localStorage.getItem('auth_token');
+  }
 }
 
-// Set token in localStorage
+// Set token in localStorage (encrypted)
 function setToken(token: string): void {
-  localStorage.setItem('auth_token', token);
+  try {
+    const encrypted = encryptData(token);
+    localStorage.setItem('auth_token', encrypted);
+  } catch (error) {
+    // Fallback to unencrypted if encryption fails
+    localStorage.setItem('auth_token', token);
+  }
 }
 
 // Remove token from localStorage
 function removeToken(): void {
   localStorage.removeItem('auth_token');
+  clearEncryptionKey();
 }
 
 // Get current user from API

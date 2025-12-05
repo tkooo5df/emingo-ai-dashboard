@@ -59,3 +59,4 @@ The API key will be visible in the browser's network tab. For production, it's r
 
 After restarting Vite, all AI features will work with your OpenAI API key.
 
+

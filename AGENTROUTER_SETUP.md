@@ -65,3 +65,4 @@ All AI features now use AgentRouter GPT-5.1:
 
 **Get your API key from: https://agentrouter.org/** 🔑
 
+

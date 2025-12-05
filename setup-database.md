@@ -72,3 +72,4 @@ psql postgres://postgres:vOZx4og262UxQeT@localhost:5432
 2. إضافة متغيرات البيئة
 3. تحديث كود التطبيق لاستخدام قاعدة البيانات بدلاً من localStorage
 
+

@@ -27,3 +27,4 @@ if (Get-Command psql -ErrorAction SilentlyContinue) {
     Write-Host "psql غير مثبت. يرجى استخدام flyctl postgres connect يدوياً" -ForegroundColor Red
 }
 
+

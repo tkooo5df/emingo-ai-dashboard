@@ -11,3 +11,4 @@ node setup-tables.js
 
 Write-Host "Done! Close the proxy window when finished." -ForegroundColor Green
 
+

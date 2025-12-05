@@ -23,32 +23,66 @@ const AIAssistant = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [loadingHistory, setLoadingHistory] = useState(true);
 
-  // Load user profile to get name
+  // Load user profile and conversation history
   useEffect(() => {
-    const loadProfile = async () => {
+    const loadData = async () => {
       try {
+        // Load profile
         const profile = await api.getProfile();
         if (profile && profile.name) {
           setUserName(profile.name);
         }
+
+        // Load conversation history (last session)
+        try {
+          const conversations = await api.getAIConversations(undefined, 100);
+          if (conversations && conversations.length > 0) {
+            // Get the most recent session_id
+            const latestSessionId = conversations[0].session_id;
+            setSessionId(latestSessionId);
+            
+            // Load messages for this session
+            const sessionMessages = await api.getAIConversations(latestSessionId);
+            if (sessionMessages && sessionMessages.length > 0) {
+              const loadedMessages: Message[] = sessionMessages.map((msg: any) => ({
+                id: msg.id,
+                role: msg.role,
+                content: msg.content,
+                timestamp: new Date(msg.created_at)
+              }));
+              setMessages(loadedMessages);
+              setLoadingHistory(false);
+              return;
+            }
+          }
+        } catch (convError) {
+          console.error('Error loading conversation history:', convError);
+          // Continue with welcome message if history fails
+        }
       } catch (error) {
         console.error('Error loading profile for AI Assistant:', error);
+      } finally {
+        setLoadingHistory(false);
       }
     };
-    loadProfile();
+    loadData();
   }, []);
 
-  // Initialize welcome message with user's name
+  // Initialize welcome message with user's name if no history
   useEffect(() => {
-    const welcomeMessage: Message = {
-      id: '1',
-      role: 'assistant',
-      content: t('aiAssistant.welcome', { name: userName }),
-      timestamp: new Date()
-    };
-    setMessages([welcomeMessage]);
-  }, [userName]);
+    if (!loadingHistory && messages.length === 0) {
+      const welcomeMessage: Message = {
+        id: '1',
+        role: 'assistant',
+        content: t('aiAssistant.welcome', { name: userName }),
+        timestamp: new Date()
+      };
+      setMessages([welcomeMessage]);
+    }
+  }, [userName, loadingHistory, messages.length, t]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,17 +96,24 @@ const AIAssistant = () => {
     };
 
     setMessages(prev => [...prev, userMessage]);
+    const currentInput = input.trim();
     setInput('');
     setLoading(true);
 
     try {
-      const response = await askAssistant(userMessage.content);
+      const result = await askAssistant(currentInput, sessionId || undefined);
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: response,
+        content: result.response,
         timestamp: new Date()
       };
+      
+      // Update sessionId if we got a new one
+      if (result.session_id && result.session_id !== sessionId) {
+        setSessionId(result.session_id);
+      }
+      
       setMessages(prev => [...prev, assistantMessage]);
     } catch (error) {
       toast({

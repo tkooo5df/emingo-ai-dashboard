@@ -20,13 +20,22 @@ async function apiRequest(endpoint: string, options: RequestInit = {}) {
 
   }
 
+  // Add security headers
+  const securityHeaders: Record<string, string> = {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`,
+    'X-Requested-With': 'XMLHttpRequest', // Helps identify AJAX requests
+    'X-Client-Version': '1.0.0', // Version tracking
+  };
+
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     ...options,
     headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`,
+      ...securityHeaders,
       ...options.headers,
     },
+    // Security: Don't send credentials to untrusted origins
+    credentials: 'same-origin',
   });
 
   if (!response.ok) {
@@ -367,6 +376,28 @@ export const api = {
   
   getTableInfo: async (tableName: string) => {
     return await apiRequest(`/database/table/${tableName}`);
+  },
+
+  // AI Conversations
+  getAIConversations: async (sessionId?: string, limit?: number) => {
+    const params = new URLSearchParams();
+    if (sessionId) params.append('session_id', sessionId);
+    if (limit) params.append('limit', limit.toString());
+    const query = params.toString();
+    return await apiRequest(`/ai/conversations${query ? `?${query}` : ''}`);
+  },
+  
+  saveAIConversation: async (sessionId: string, role: 'user' | 'assistant', content: string) => {
+    return await apiRequest('/ai/conversations', {
+      method: 'POST',
+      body: JSON.stringify({ session_id: sessionId, role, content }),
+    });
+  },
+  
+  deleteAIConversation: async (sessionId: string) => {
+    return await apiRequest(`/ai/conversations/${sessionId}`, {
+      method: 'DELETE',
+    });
   },
 
   // Admin

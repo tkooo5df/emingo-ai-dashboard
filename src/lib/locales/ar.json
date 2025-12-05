@@ -34,6 +34,7 @@
     "submit": "إرسال",
     "name": "الاسم",
     "amount": "المبلغ",
+    "currency": "العملة",
     "date": "التاريخ",
     "category": "الفئة",
     "description": "الوصف",
@@ -150,7 +151,11 @@
     "addExpenseDescription": "إضافة معاملة مصروف جديدة",
     "errorLoadingBalance": "تعذر تحميل رصيد الحساب",
     "errorSavingTransaction": "تعذر حفظ المعاملة",
-    "balanceAfterDebts": "الرصيد بعد الديون"
+    "balanceAfterDebts": "الرصيد بعد الديون",
+    "totalBalance": "الرصيد الإجمالي",
+    "debtsReceived": "الديون المستحقة لك",
+    "debtsGiven": "الديون المستحقة عليك",
+    "noDebts": "لا توجد ديون"
   },
   "income": {
     "title": "مدير الدخل",
@@ -374,6 +379,9 @@
     "aboutYourself": "عنك",
     "currency": "العملة",
     "currencyDescription": "اختر العملة المفضلة لعرض المبالغ",
+    "exchangeRates": "أسعار الصرف",
+    "exchangeRatesDescription": "قم بتعيين أسعار الصرف للعملات الأجنبية (1 وحدة = X دينار جزائري)",
+    "exchangeRateHint": "أدخل سعر الصرف لـ {{currency}} مقابل الدينار الجزائري",
     "customCategories": "الفئات المخصصة",
     "customCategoriesDescription": "إضافة فئات مخصصة للدخل والمصروفات",
     "accounts": "الحسابات والبطاقات",
